@@ -1,8 +1,11 @@
 import { sql } from "drizzle-orm"
 import { integer, pgTable, varchar, uniqueIndex, pgEnum, serial, timestamp, jsonb, text, boolean, primaryKey, char, index } from "drizzle-orm/pg-core"
 
-export type Platform = 'SOURCEXCHANGE' | 'BUILTBYBIT' | 'GITHUB'
-export type Currency = 'USD' | 'EUR'
+export const platforms = Object.freeze(['SOURCEXCHANGE', 'BUILTBYBIT', 'GITHUB'] as const)
+export const currency = Object.freeze(['USD', 'EUR'] as const)
+
+export type Platform = typeof platforms[number]
+export type Currency = typeof currency[number]
 
 export const extensionType = pgEnum('extension_type', ['THEME', 'EXTENSION'])
 

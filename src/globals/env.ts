@@ -18,6 +18,9 @@ const infos = z.object({
 	PORT: z.string().transform((str) => parseInt(str)).optional(),
 	INTERNAL_KEY: z.string(),
 
+	SXC_TOKEN: z.string().optional(),
+	BBB_TOKEN: z.string().optional(),
+
 	LOG_LEVEL: z.enum(['none', 'info', 'debug']),
 	LOG_DIRECTORY: z.string().optional(),
 
