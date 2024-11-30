@@ -12,7 +12,7 @@ services:
 
   db:
     container_name: blueprint-api_db
-    image: postgres:16
+    image: postgres:17
     restart: unless-stopped
     environment:
       - POSTGRES_USER=blueprint_api
