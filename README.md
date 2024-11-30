@@ -6,6 +6,26 @@
   <a href="https://discord.gg/CUwHwv6xRe">Community</a>
 </p>
 
+<!-- Development -->
+<br/><h2 align="center">🧩 Development</h2>
+```bash
+# Clone the repository
+git clone https://github.com/BlueprintFramework/api.git
+cd api
+
+# Install dependencies
+pnpm install
+
+# Fill out .env file
+cp .env.example .env
+
+# Migrate database
+pnpm kit migrate
+
+# Start development server
+pnpm dev
+```
+
 <br/><br/>
 <p align="center">
   $\color{#4b4950}{\textsf{© 2024 Emma (prpl.wtf)}}$
