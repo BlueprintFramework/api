@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./.env:/app/server/.env
+      - ./logs:/app/logs
     depends_on:
       - db
     ports:
