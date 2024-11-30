@@ -1,6 +1,6 @@
 cd /app/server
 
-npm kit migrate
+npm run kit migrate
 
 cd lib
 exec node --enable-source-maps index.js
