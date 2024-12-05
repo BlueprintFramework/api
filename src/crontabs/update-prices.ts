@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm"
 
 let isRunning = false, blockRunning = false
 export default new Crontab()
-	.cron(env.LOG_LEVEL === 'debug' ? '*/3 * * * * *' : '*/6 * * * *')
+	.cron(env.LOG_LEVEL === 'debug' ? '*/3 * * * * *' : '0 */6 * * *')
 	.listen(async(ctx) => {
 		if (isRunning || blockRunning || !ctx.env.UPDATE_PRICES) return
 		isRunning = true
