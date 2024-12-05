@@ -16,7 +16,7 @@ const infos = z.object({
 	DATABASE_URL: z.string(),
 	DATABASE_URL_PRIMARY: z.string().optional(),
 
-	UPDATE_PRICES: z.enum(['true', 'false']).transform((str) => str === 'true').default('false'),
+	UPDATE_PRICES: z.enum(['true', 'false']).transform((str) => str === 'true'),
 
 	PORT: z.string().transform((str) => parseInt(str)).optional(),
 	INTERNAL_KEY: z.string(),
