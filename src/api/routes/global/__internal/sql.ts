@@ -7,7 +7,7 @@ export = new globalAPIRouter.Path('/')
 			if (!key || key !== ctr["@"].env.INTERNAL_KEY) return ctr.status(ctr.$status.UNAUTHORIZED).print({ errors: ['Unauthorized'] })
 
 			const sql = await ctr.$body().text(),
-				result = await ctr["@"].database.$client.query(sql)
+				result = await ctr["@"].database.write.$client.query(sql)
 
 			return ctr.print(result.rows)
 		})
