@@ -74,9 +74,10 @@ server.schema('Extension', {
 			additionalProperties: {
 				type: 'object',
 				properties: {
+					url: { type: 'string' },
 					price: { type: 'number' },
-					url: { type: 'string' }
-				}, required: ['price', 'url']
+					currency: { type: 'string', enum: Array.from(database.schema.currency) }
+				}, required: ['url', 'price', 'currency']
 			}
 		},
 
