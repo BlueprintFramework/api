@@ -50,7 +50,7 @@ const process = async(): Promise<void> => {
 
 		const panels = new Set(telemetry.map((t) => t.panelId))
 		
-		await Promise.all(Array.from(panels).map((id) => cache.use(`panel:${id}`, () => database.insert(schema.telemetryPanels)
+		await Promise.all(Array.from(panels).map((id) => cache.use(`panel:${id}`, () => database.write.insert(schema.telemetryPanels)
 			.values({ id, version: telemetry.find((t) => t.panelId === id)!.version })
 			.onConflictDoUpdate({
 				target: schema.telemetryPanels.id,
@@ -60,7 +60,7 @@ const process = async(): Promise<void> => {
 			})
 		)))
 
-		await database.insert(schema.telemetryData)
+		await database.write.insert(schema.telemetryData)
 			.values(telemetry.map((t) => Object.assign(t, { ip: string.hash(t.ip, { algorithm: 'sha256' }) })))
 			.onConflictDoNothing()
 	} catch (err) {

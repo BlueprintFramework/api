@@ -8,10 +8,18 @@ const pool = new Pool({
 	connectionString: env.DATABASE_URL
 })
 
+const writePool = env.DATABASE_URL_PRIMARY ? new Pool({
+	connectionString: env.DATABASE_URL_PRIMARY
+}) : pool
+
 const db = drizzle(pool, { schema }),
+	writeDb = drizzle(writePool, { schema }),
 	startTime = performance.now()
 
-db.$client.connect().then(() => {
+Promise.all([
+	db.$client.connect(),
+	env.DATABASE_URL_PRIMARY ? writeDb.$client.connect() : Promise.resolve()
+]).then(() => {
 	logger()
 		.text('Database', (c) => c.cyan)
 		.text('Connection established!')
@@ -19,7 +27,10 @@ db.$client.connect().then(() => {
 		.info()
 })
 
-export default Object.assign(db, {
+type DbWithoutWrite = Omit<typeof db, 'insert' | 'update' | 'delete'>
+
+export default Object.assign(db as DbWithoutWrite, {
+	write: writeDb,
 	schema,
 
 	fields: Object.freeze({

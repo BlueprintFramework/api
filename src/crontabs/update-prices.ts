@@ -7,7 +7,7 @@ let isRunning = false, blockRunning = false
 export default new Crontab()
 	.cron(env.LOG_LEVEL === 'debug' ? '*/3 * * * * *' : '0 */6 * * *')
 	.listen(async(ctx) => {
-		if (isRunning || blockRunning) return
+		if (isRunning || blockRunning || !ctx.env.UPDATE_PRICES) return
 		isRunning = true
 
 		if (env.LOG_LEVEL === 'debug') blockRunning = true
@@ -62,7 +62,7 @@ export default new Crontab()
 			}
 
 			if (JSON.stringify(platforms) !== JSON.stringify(extension.platforms)) {
-				await ctx.database.update(ctx.database.schema.extensions)
+				await ctx.database.write.update(ctx.database.schema.extensions)
 					.set({
 						platforms
 					})
