@@ -74,15 +74,14 @@ server.schema('Extension', {
 			additionalProperties: {
 				type: 'object',
 				properties: {
-					url: { type: 'string' },
+					url: { type: 'string', format: 'uri' },
 					price: { type: 'number' },
 					currency: { type: 'string', enum: Array.from(database.schema.currency) }
 				}, required: ['url', 'price', 'currency']
 			}
 		},
 
-		banner: { type: 'string' },
-
+		banner: { type: 'string', format: 'uri' },
 		created: { type: 'string', format: 'date-time' }
 	}, required: ['id', 'type', 'author', 'name', 'identifier', 'summary', 'platforms', 'banner', 'created']
 })
@@ -173,14 +172,13 @@ server.path('/', (path) => path
 <html>
 	<head>
 		<meta charset="UTF-8" />
-		<script defer data-domain="versions.mcjars.app" src="https://cat.rjns.dev/js/script.js"></script>
 		<link rel="icon" href="https://blueprint.zip/favicon.ico" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="darkreader-lock" />
 		<title>Blueprint API Docs</title>
 		<meta property="og:type" content="website">
 		<meta property="og:title" content="Blueprint API">
-		<meta property="og:url" content="https://api.blueprint.zip">
+		<meta property="og:url" content="https://api.blueprintframe.work">
 	</head>
 	<body>
 		<script id="api-reference" data-url="/openapi.json"></script>
