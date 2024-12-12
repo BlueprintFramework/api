@@ -28,6 +28,6 @@ pnpm dev
 
 <br/><br/>
 <p align="center">
-  $\color{#4b4950}{\textsf{© 2024 Emma (prpl.wtf)}}$
-  <br/><br/><img src="https://github.com/user-attachments/assets/e6ff62c3-6d99-4e43-850d-62150706e5dd"/>
+  $\color{#4b4950}{\textsf{© 2024 Emma (prpl.wtf) and 0x7d8}}$
+  <br/><br/><img src="https://github.com/user-attachments/assets/ea44ca4a-c256-4e1c-9363-a6a7a3db9a80"/>
 </p>
