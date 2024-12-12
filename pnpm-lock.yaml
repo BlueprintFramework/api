@@ -12,8 +12,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       '@rjweb/utils':
-        specifier: ^1.12.26
-        version: 1.12.26
+        specifier: ^1.12.27
+        version: 1.12.27
       ansi-colors:
         specifier: ^4.1.3
         version: 4.1.3
@@ -36,12 +36,12 @@ importers:
         specifier: ^9.8.4
         version: 9.8.4
       zod:
-        specifier: ^3.23.8
-        version: 3.23.8
+        specifier: ^3.24.1
+        version: 3.24.1
     devDependencies:
       '@types/node':
-        specifier: ^22.10.1
-        version: 22.10.1
+        specifier: ^22.10.2
+        version: 22.10.2
       '@types/node-cron':
         specifier: ^3.0.11
         version: 3.0.11
@@ -489,15 +489,15 @@ packages:
   '@rjweb/runtime-node@1.1.1':
     resolution: {integrity: sha512-rlNGXQV3IYn19MsJhnd+tOaEr09vTvRw498ihsKzEDcUsidqN8nYrOS3sRI5I0w6ROY4zyAMsUFbSucktngx1w==}
 
-  '@rjweb/utils@1.12.26':
-    resolution: {integrity: sha512-LUBR8oOfdjNCd8JDy8C6amZ3Yu6QqyDhaSFAjE56EdTJ13qCaff2HSx3HP2Cqdiz4kMv4I5YkxqAcI5ul57D0w==}
+  '@rjweb/utils@1.12.27':
+    resolution: {integrity: sha512-8XEf4WyAJpicJyDAwwq+rDajXyh6aRlN1eE22iz9vcmmb0MFZIsk1i826ExnwmE4mxtww6lA44YDtH+CygWtPQ==}
     engines: {node: '>=18.0.0'}
 
   '@types/node-cron@3.0.11':
     resolution: {integrity: sha512-0ikrnug3/IyneSHqCBeslAhlK2aBfYek1fGo4bP4QnZPmiqSGRK+Oy7ZMisLWkesffJvQ1cqAcBnJC+8+nxIAg==}
 
-  '@types/node@22.10.1':
-    resolution: {integrity: sha512-qKgsUwfHZV2WCWLAnVP1JqnpE6Im6h3Y0+fYgMTasNQ7V++CBX5OT1as0g0f+OyubbFqhf6XVNIsmN4IIhEgGQ==}
+  '@types/node@22.10.2':
+    resolution: {integrity: sha512-Xxr6BBRCAOQixvonOye19wnzyDiUtTeqldOOmj3CkeblonbccA12PFwlufvRdrpjXxqnmUaeiU5EOA+7s5diUQ==}
 
   '@types/pg@8.11.10':
     resolution: {integrity: sha512-LczQUW4dbOQzsH2RQ5qoeJ6qJPdrcM/DcMLoqWQkMLMsq83J5lAX3LXjdkWdpscFy67JSOWDnh7Ny/sPFykmkg==}
@@ -572,8 +572,8 @@ packages:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
     engines: {node: '>= 0.6'}
 
-  debug@4.3.7:
-    resolution: {integrity: sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ==}
+  debug@4.4.0:
+    resolution: {integrity: sha512-6WTZ/IxCY/T6BALoZHaE4ctp9xm+Z5kY/pzYaCHRFeyVhojxlrm+46y68HA6hr0TcwEssoxNiDEUJQjfPZ/RYA==}
     engines: {node: '>=6.0'}
     peerDependencies:
       supports-color: '*'
@@ -1008,8 +1008,8 @@ packages:
     resolution: {integrity: sha512-cYVsTjKl8b+FrnidjibDWskAv7UKOfcwaVZdp/it9n1s9fU3IkgDbhdIRKCW4JDsAlECJY0ytoVPT3sK6kideA==}
     engines: {node: '>=18'}
 
-  zod@3.23.8:
-    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+  zod@3.24.1:
+    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
 
 snapshots:
 
@@ -1236,25 +1236,25 @@ snapshots:
 
   '@rjweb/runtime-node@1.1.1':
     dependencies:
-      '@rjweb/utils': 1.12.26
+      '@rjweb/utils': 1.12.27
       bufferutil: 4.0.8
       ws: 8.18.0(bufferutil@4.0.8)
     transitivePeerDependencies:
       - utf-8-validate
 
-  '@rjweb/utils@1.12.26':
+  '@rjweb/utils@1.12.27':
     dependencies:
       ts-arithmetic: 0.1.1
 
   '@types/node-cron@3.0.11': {}
 
-  '@types/node@22.10.1':
+  '@types/node@22.10.2':
     dependencies:
       undici-types: 6.20.0
 
   '@types/pg@8.11.10':
     dependencies:
-      '@types/node': 22.10.1
+      '@types/node': 22.10.2
       pg-protocol: 1.7.0
       pg-types: 4.0.2
 
@@ -1322,7 +1322,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  debug@4.3.7:
+  debug@4.4.0:
     dependencies:
       ms: 2.1.3
 
@@ -1348,7 +1348,7 @@ snapshots:
 
   esbuild-register@3.6.0(esbuild@0.19.12):
     dependencies:
-      debug: 4.3.7
+      debug: 4.4.0
       esbuild: 0.19.12
     transitivePeerDependencies:
       - supports-color
@@ -1605,12 +1605,12 @@ snapshots:
 
   rjweb-server@9.8.4:
     dependencies:
-      '@rjweb/utils': 1.12.26
+      '@rjweb/utils': 1.12.27
       content-disposition: 0.5.4
       inquirer: 9.3.7
       openapi3-ts: 4.4.0
       yargs: 17.7.2
-      zod: 3.23.8
+      zod: 3.24.1
 
   run-async@3.0.0: {}
 
@@ -1709,4 +1709,4 @@ snapshots:
 
   yoctocolors-cjs@2.1.2: {}
 
-  zod@3.23.8: {}
+  zod@3.24.1: {}

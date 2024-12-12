@@ -83,7 +83,7 @@ const process = async(): Promise<void> => {
 				t.country = ip.country
 			}
 
-			t.ip = string.hash(t.ip, { algorithm: 'sha256 '})
+			t.ip = string.hash(t.ip, { algorithm: 'sha256' })
 		}
 
 		const panels = new Set(telemetry.map((t) => t.panelId))
