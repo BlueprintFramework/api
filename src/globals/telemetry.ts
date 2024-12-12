@@ -5,14 +5,13 @@ import * as schema from "@/schema"
 import { lookup } from "@/globals/ip"
 import cache from "@/globals/cache"
 import { z } from "zod"
-import github from "@/globals/github"
 
 export const telemetrySchema = z.object({
 	id: z.string().uuid(),
 	telemetry_version: z.literal(1),
 
 	blueprint: z.object({
-		version: z.string().refine((str) => github().history.includes(str)),
+		version: z.string().max(31),
 		extensions: z.object({
 			identifier: z.string(),
 			version: z.string(),
