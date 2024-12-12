@@ -1,18 +1,53 @@
 import database from "@/globals/database"
 import logger from "@/globals/logger"
-import { network, string, time } from "@rjweb/utils"
+import { network, object, string, time } from "@rjweb/utils"
 import * as schema from "@/schema"
 import { lookup } from "@/globals/ip"
 import cache from "@/globals/cache"
+import { z } from "zod"
+import github from "@/globals/github"
 
-export type Telemetry = {
+export const telemetrySchema = z.object({
+	id: z.string().uuid(),
+	telemetry_version: z.literal(1),
+
+	blueprint: z.object({
+		version: z.string().refine((str) => github().history.includes(str)),
+		extensions: z.object({
+			identifier: z.string(),
+			version: z.string(),
+			target: z.string()
+		}).array()
+	}),
+
+	panel: z.object({
+		version: z.string(),
+		phpVersion: z.string(),
+
+		drivers: z.object({
+			backup: z.object({
+				type: z.string()
+			}),
+
+			cache: z.object({
+				type: z.string()
+			}),
+
+			database: z.object({
+				type: z.string(),
+				version: z.string()
+			})
+		})
+	})
+})
+
+export type Telemetry =  {
 	panelId: string
-	version: string
-	data: string
+	telemetryVersion: number
 	ip: string
-
 	continent: string | null
 	country: string | null
+	data: Pick<z.infer<typeof telemetrySchema>, 'blueprint' | 'panel'>
 }
 
 const processing: Telemetry[] = []
@@ -20,17 +55,19 @@ const processing: Telemetry[] = []
 /**
  * Log a new Telemetry
  * @since 1.0.0
-*/ export function log(panelId: string, version: string, data: string, ip: network.IPAddress): Telemetry {
-	const telemetry: Telemetry = {
-		panelId, version, data,
+*/ export function log(ip: network.IPAddress, telemetry: z.infer<typeof telemetrySchema>): Telemetry {
+	const data: Telemetry = {
+		panelId: telemetry.id,
+		telemetryVersion: telemetry.telemetry_version,
 		ip: ip.usual(),
 		continent: null,
-		country: null
+		country: null,
+		data: object.pick(telemetry, ['blueprint', 'panel'])
 	}
 
-	processing.push(telemetry)
+	processing.push(data)
 
-	return telemetry
+	return data
 }
 
 const process = async(): Promise<void> => {
@@ -46,22 +83,22 @@ const process = async(): Promise<void> => {
 				t.continent = ip.continent
 				t.country = ip.country
 			}
+
+			t.ip = string.hash(t.ip, { algorithm: 'sha256 '})
 		}
 
 		const panels = new Set(telemetry.map((t) => t.panelId))
 		
 		await Promise.all(Array.from(panels).map((id) => cache.use(`panel:${id}`, () => database.write.insert(schema.telemetryPanels)
-			.values({ id, version: telemetry.find((t) => t.panelId === id)!.version })
+			.values({ id })
 			.onConflictDoUpdate({
 				target: schema.telemetryPanels.id,
-				set: {
-					version: telemetry.find((t) => t.panelId === id)!.version
-				}
+				set: { lastUpdate: new Date() }
 			})
 		)))
 
 		await database.write.insert(schema.telemetryData)
-			.values(telemetry.map((t) => Object.assign(t, { ip: string.hash(t.ip, { algorithm: 'sha256' }) })))
+			.values(telemetry)
 			.onConflictDoNothing()
 	} catch (err) {
 		processing.push(...telemetry)

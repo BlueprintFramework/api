@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm"
-import { integer, pgTable, varchar, uniqueIndex, pgEnum, serial, timestamp, jsonb, text, boolean, primaryKey, char, index } from "drizzle-orm/pg-core"
+import { integer, pgTable, varchar, uniqueIndex, pgEnum, serial, timestamp, jsonb, text, boolean, primaryKey, char, index, uuid, smallint } from "drizzle-orm/pg-core"
 
 export const platforms = Object.freeze(['SOURCEXCHANGE', 'BUILTBYBIT', 'GITHUB'] as const)
 export const currency = Object.freeze(['USD', 'EUR'] as const)
@@ -10,17 +10,18 @@ export type Currency = typeof currency[number]
 export const extensionType = pgEnum('extension_type', ['THEME', 'EXTENSION'])
 
 export const telemetryPanels = pgTable('telemetry_panels', {
-	id: char('id', { length: 23 }).primaryKey().notNull(),
-	version: varchar('version', { length: 31 }).notNull(),
+	id: uuid('id').primaryKey(),
 
-	created: timestamp('created').notNull().default(sql`now()`)
+	created: timestamp('created').notNull().default(sql`now()`),
+	lastUpdate: timestamp('last_update').notNull().default(sql`now()`)
 })
 
 export const telemetryData = pgTable('telemetry_data', {
 	id: serial('id').primaryKey().notNull(),
-	panelId: char('panel_id', { length: 23 }).notNull().references(() => telemetryPanels.id),
+	panelId: uuid('panel_id').notNull().references(() => telemetryPanels.id),
 
-	data: varchar('data', { length: 255 }).notNull(),
+	telemetryVersion: smallint('telemetry_version').notNull(),
+	data: jsonb('data').notNull(),
 	ip: char('ip', { length: 64 }).notNull(),
 
 	continent: char('continent', { length: 2 }),

@@ -151,15 +151,6 @@ server.path('/', (path) => path
 	)
 	.http('GET', '/send/{panel}/{data}', (http) => http
 		.onRequest((ctr) => {
-			const panel = ctr.params.get('panel', ''),
-				data = ctr.params.get('data', '')
-
-			const [ id, version ] = panel.split('@')
-			if (!id || id.length !== 23 || !allowedId.test(id)) return ctr.status(ctr.$status.NOT_FOUND).print({ errors: ['Invalid Panel ID'] })
-			if (!version || ctr["@"].github().history.indexOf(version) === -1) return ctr.status(ctr.$status.NOT_FOUND).print({ errors: ['Invalid Panel Version'] })
-
-			ctr["@"].telemetry.log(id, version, data, ctr.client.ip)
-
 			return ctr.print({})
 		})
 	)
