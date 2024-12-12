@@ -49,6 +49,7 @@ export type Telemetry =  {
 	continent: string | null
 	country: string | null
 	data: Pick<z.infer<typeof telemetrySchema>, 'blueprint' | 'panel'>
+	created: Date
 }
 
 const processing: Telemetry[] = []
@@ -63,7 +64,8 @@ const processing: Telemetry[] = []
 		ip: ip.usual(),
 		continent: null,
 		country: null,
-		data: object.pick(telemetry, ['blueprint', 'panel'])
+		data: object.pick(telemetry, ['blueprint', 'panel']),
+		created: new Date()
 	}
 
 	processing.push(data)
@@ -94,7 +96,7 @@ const process = async(): Promise<void> => {
 			.values({ id })
 			.onConflictDoUpdate({
 				target: schema.telemetryPanels.id,
-				set: { lastUpdate: new Date() }
+				set: { lastUpdate: telemetry.filter((t) => t.panelId === id).sort((a, b) => b.created.getTime() - a.created.getTime())[0].created }
 			})
 		)))
 
