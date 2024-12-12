@@ -8,6 +8,13 @@
       "when": 1732967733846,
       "tag": "0000_brief_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1734018063049,
+      "tag": "0001_gifted_rafael_vega",
+      "breakpoints": true
     }
   ]
 }
