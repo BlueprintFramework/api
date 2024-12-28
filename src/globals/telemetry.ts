@@ -14,6 +14,13 @@ export const telemetrySchema = z.object({
 		version: z.string().max(31),
 		docker: z.boolean(),
 		developer: z.boolean(),
+
+		flags: z.object({
+			disable_attribution: z.boolean(),
+			is_developer: z.boolean(),
+			show_in_sidebar: z.boolean()
+		}),
+
 		extensions: z.object({
 			identifier: z.string(),
 			version: z.string(),
@@ -22,21 +29,21 @@ export const telemetrySchema = z.object({
 	}),
 
 	panel: z.object({
-		version: z.string(),
-		phpVersion: z.string(),
+		version: z.string().max(31),
+		phpVersion: z.string().max(31),
 
 		drivers: z.object({
 			backup: z.object({
-				type: z.string()
+				type: z.string().max(31)
 			}),
 
 			cache: z.object({
-				type: z.string()
+				type: z.string().max(31)
 			}),
 
 			database: z.object({
-				type: z.string(),
-				version: z.string()
+				type: z.string().max(31),
+				version: z.string().max(255)
 			})
 		})
 	})
