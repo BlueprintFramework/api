@@ -1,5 +1,5 @@
-import { sql } from "drizzle-orm"
-import { integer, pgTable, varchar, uniqueIndex, pgEnum, serial, timestamp, jsonb, text, boolean, primaryKey, char, index, uuid, smallint } from "drizzle-orm/pg-core"
+import { eq, sql } from "drizzle-orm"
+import { integer, pgTable, varchar, uniqueIndex, pgEnum, serial, timestamp, jsonb, text, boolean, primaryKey, char, index, uuid, smallint, pgView } from "drizzle-orm/pg-core"
 
 export const platforms = Object.freeze(['SOURCEXCHANGE', 'BUILTBYBIT', 'GITHUB'] as const)
 export const currency = Object.freeze(['USD', 'EUR'] as const)
@@ -36,6 +36,22 @@ export const telemetryData = pgTable('telemetry_data', {
 	index('telemetry_data_country_idx').on(telemetryData.country),
 	index('telemetry_data_created_idx').on(telemetryData.created)
 ])
+
+export const telemetryPanelsWithLatest = pgView('telemetry_panels_with_latest')
+  .as((qb) => qb
+		.select()
+		.from(telemetryPanels)
+		.leftJoin(
+			qb.select({
+				panelId: telemetryData.panelId,
+				latestTelemetryDataId: sql<number>`max(${telemetryData.id})`.as('latest_telemetry_data_id')
+			})
+				.from(telemetryData)
+				.groupBy(telemetryData.panelId)
+				.as('latest'),
+			eq(telemetryPanels.id, sql`latest.panel_id`)
+		)
+	)
 
 export const authors = pgTable('authors', {
 	id: serial('id').primaryKey().notNull(),
