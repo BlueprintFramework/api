@@ -113,6 +113,13 @@ export const authorAPIRouter = new server.FileLoader('/api/author')
 				website: string | null
 			}
 		}>()
+		.document({
+			security: [
+				{
+					api_key: []
+				}
+			]
+		})
 		.httpRequest(async(ctr, end) => {
 			const key = ctr.headers.get('authorization')
 			if (!key || key.length !== 32) return end(ctr.status(ctr.$status.UNAUTHORIZED).print({ errors: ['Invalid Authorization Key'] }))
