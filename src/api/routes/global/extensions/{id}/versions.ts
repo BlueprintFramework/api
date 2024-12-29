@@ -77,7 +77,7 @@ export = new globalAPIRouter.Path('/')
 					)
 					.where(sql`ext->>'identifier' = ${extension.identifier}`)
 					.groupBy(sql`ext->>'version'`)
-					.orderBy(desc(sql`ext->>'version'`)),
+					.orderBy(desc(sql`percentage`)),
 				time(5).m()
 			)
 
