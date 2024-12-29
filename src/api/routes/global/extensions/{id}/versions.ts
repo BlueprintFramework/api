@@ -58,9 +58,7 @@ export = new globalAPIRouter.Path('/')
 
 			const versionStats = await ctr["@"].cache.use(`versions::${extension.id}`, () => ctr["@"].database.select({
 					version: sql<string>`ext->>'version'`.as('version'),
-					percentage: sql<number>`
-						(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER ())::numeric(5,2)
-					`.mapWith(Number).as('percentage')
+					percentage: sql<number>`(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER ())::numeric(5,2)`.mapWith(Number).as('percentage')
 				})
 					.from(
 						ctr["@"].database.select({
