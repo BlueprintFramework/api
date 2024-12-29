@@ -82,8 +82,17 @@ server.schema('Extension', {
 		},
 
 		banner: { type: 'string', format: 'uri' },
-		created: { type: 'string', format: 'date-time' }
-	}, required: ['id', 'type', 'author', 'name', 'identifier', 'summary', 'platforms', 'banner', 'created']
+		created: { type: 'string', format: 'date-time' },
+
+		stats: {
+			type: 'object',
+			properties: {
+				panels: {
+					type: 'integer'
+				}
+			}, required: ['panels']
+		}
+	}, required: ['id', 'type', 'author', 'name', 'identifier', 'summary', 'platforms', 'banner', 'created', 'stats']
 })
 
 export const globalAPIRouter = new server.FileLoader('/api')
@@ -121,8 +130,6 @@ export const authorAPIRouter = new server.FileLoader('/api/author')
 		.use({})
 	)
 	.export()
-
-const allowedId = /^[0-9a-f]{23}$/
 
 server.path('/', (path) => path
 	.http('GET', '/openapi.json', (http) => http

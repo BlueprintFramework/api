@@ -3,6 +3,7 @@ import * as schema from "@/schema"
 import env from "@/globals/env"
 import logger from "@/globals/logger"
 import { Pool } from "pg"
+import { sql } from "drizzle-orm"
 
 const pool = new Pool({
 	connectionString: env.DATABASE_URL
@@ -51,7 +52,23 @@ export default Object.assign(db as DbWithoutWrite, {
 
 			banner: schema.extensions.banner,
 
-			created: schema.extensions.created
+			created: schema.extensions.created,
+
+			stats: Object.freeze({
+				panels: sql<number>`(
+					SELECT COUNT(*)
+					FROM (
+						SELECT jsonb_array_elements(data->'blueprint'->'extensions') as ext 
+						FROM telemetry_data 
+						WHERE id IN (
+							SELECT latest_telemetry_data_id 
+							FROM telemetry_panels_with_latest
+						)
+						AND created > NOW() - INTERVAL '2 days'
+					) subq
+					WHERE subq.ext->>'identifier' = ${schema.extensions.identifier}
+				)`.mapWith(Number)
+			})
 		})
 	})
 })
