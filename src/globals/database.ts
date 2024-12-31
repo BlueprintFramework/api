@@ -48,8 +48,9 @@ export default Object.assign(db as DbWithoutWrite, {
 			name: schema.extensions.name,
 			identifier: schema.extensions.identifier,
 			summary: schema.extensions.summary,
-			platforms: schema.extensions.platforms,
 
+			platforms: schema.extensions.platforms,
+			keywords: schema.extensions.keywords,
 			banner: schema.extensions.banner,
 
 			created: schema.extensions.created,

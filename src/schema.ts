@@ -78,14 +78,22 @@ export const extensions = pgTable('extensions', {
 	name: varchar('name', { length: 255 }).notNull(),
 	identifier: varchar('identifier', { length: 63 }).notNull(),
 	summary: varchar('summary', { length: 255 }).notNull(),
-	platforms: jsonb('platforms').notNull().$type<Record<Platform, { price: number, currency: Currency, url: string }>>(),
 
+	platforms: jsonb('platforms').notNull().$type<Record<Platform, { price: number, currency: Currency, url: string }>>(),
+	keywords: varchar('keywords', { length: 255 }).array().notNull().default([]),
 	banner: varchar('banner', { length: 255 }).notNull(),
 
 	created: timestamp('created').notNull().default(sql`now()`)
 }, (extensions) => [
 	uniqueIndex('extensions_name_idx').on(extensions.name),
-	uniqueIndex('extensions_identifier_idx').on(extensions.identifier)
+	uniqueIndex('extensions_identifier_idx').on(extensions.identifier),
+	index('extensions_pending_idx').on(extensions.pending),
+	index('extensions_hidden_idx').on(extensions.hidden),
+	index('extensions_created_idx').on(extensions.created),
+	index('extensions_author_id_idx').on(extensions.authorId),
+	index('extensions_type_idx').on(extensions.type),
+
+	index('extensions_keywords_idx').using('gin', extensions.keywords),
 ])
 
 export const adventCalendar = pgTable('advent_calendar', {

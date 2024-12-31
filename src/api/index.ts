@@ -82,6 +82,7 @@ server.schema('Extension', {
 		},
 
 		banner: { type: 'string', format: 'uri' },
+		keywords: { type: 'array', items: { type: 'string' } },
 		created: { type: 'string', format: 'date-time' },
 
 		stats: {
