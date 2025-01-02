@@ -13,7 +13,6 @@ export const telemetrySchema = z.object({
 	blueprint: z.object({
 		version: z.string().max(31),
 		docker: z.boolean(),
-		developer: z.boolean(),
 
 		flags: z.object({
 			disable_attribution: z.boolean(),
