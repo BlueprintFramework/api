@@ -15,6 +15,7 @@ try {
 const infos = z.object({
 	DATABASE_URL: z.string(),
 	DATABASE_URL_PRIMARY: z.string().optional(),
+	SENTRY_URL: z.string().optional(),
 
 	UPDATE_PRICES: z.enum(['true', 'false']).transform((str) => str === 'true'),
 
@@ -27,7 +28,8 @@ const infos = z.object({
 	LOG_LEVEL: z.enum(['none', 'info', 'debug']),
 	LOG_DIRECTORY: z.string().optional(),
 
-	APP_URL: z.string()
+	APP_URL: z.string(),
+	SERVER_NAME: z.string().optional()
 })
 
 export type Environment = z.infer<typeof infos>

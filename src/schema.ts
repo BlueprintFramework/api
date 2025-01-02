@@ -93,7 +93,7 @@ export const extensions = pgTable('extensions', {
 	index('extensions_author_id_idx').on(extensions.authorId),
 	index('extensions_type_idx').on(extensions.type),
 
-	index('extensions_keywords_idx').using('gin', extensions.keywords),
+	index('extensions_keywords_idx').using('gin', extensions.keywords)
 ])
 
 export const adventCalendar = pgTable('advent_calendar', {

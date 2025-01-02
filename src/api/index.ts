@@ -8,6 +8,8 @@ import github from "@/globals/github"
 import * as telemetry from "@/globals/telemetry"
 import { Runtime } from "@rjweb/runtime-node"
 import { eq } from "drizzle-orm"
+import { sentry } from "@rjweb/sentry"
+import * as Sentry from "@sentry/node"
 
 const startTime = performance.now()
 
@@ -28,6 +30,21 @@ export const server = new Server(Runtime, {
 }, [
 	Cors.use({
 		allowAll: true
+	}),
+	sentry.use({
+		dsn: env.SENTRY_URL,
+		environment: process.env.NODE_ENV,
+		release: getVersion(),
+		tracesSampleRate: 1.0,
+		profilesSampleRate: 1.0,
+		serverName: env.SERVER_NAME,
+		attachStacktrace: true,
+		includeBody: true,
+		integrations: [
+			Sentry.postgresIntegration(),
+			Sentry.redisIntegration(),
+			Sentry.httpIntegration({ disableIncomingRequestSpans: true })
+		]
 	})
 ], {
 	appVersion: getVersion(),
