@@ -6,7 +6,8 @@ export = new globalAPIRouter.Path('/')
 			const [ data, error ] = await ctr.bindBody(ctr["@"].telemetry.telemetrySchema)
 			if (!data) return ctr.status(ctr.$status.BAD_REQUEST).print({ errors: error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`) })
 
-			ctr["@"].telemetry.log(ctr.client.ip, data)
+			const telemetry = await ctr["@"].telemetry.log(ctr.client.ip, data, ctr.headers)
+			if (!telemetry) return ctr.status(ctr.$status.TOO_MANY_REQUESTS).print({ errors: ['You are making too many requests! Slow down.'] })
 
 			return ctr.print({})
 		})

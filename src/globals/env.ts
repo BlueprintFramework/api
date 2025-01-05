@@ -12,7 +12,7 @@ try {
 	}
 }
 
-const infos = z.object({
+const base = z.object({
 	DATABASE_URL: z.string(),
 	DATABASE_URL_PRIMARY: z.string().optional(),
 	SENTRY_URL: z.string().optional(),
@@ -20,6 +20,7 @@ const infos = z.object({
 	UPDATE_PRICES: z.enum(['true', 'false']).transform((str) => str === 'true'),
 
 	PORT: z.string().transform((str) => parseInt(str)).optional(),
+	RATELIMIT_PER_DAY: z.string().transform((str) => parseInt(str)).optional().default('2'),
 	INTERNAL_KEY: z.string(),
 
 	SXC_TOKEN: z.string().optional(),
@@ -31,6 +32,17 @@ const infos = z.object({
 	APP_URL: z.string(),
 	SERVER_NAME: z.string().optional()
 })
+
+const infos = z.union([
+	z.object({
+		REDIS_MODE: z.literal('redis').default('redis'),
+		REDIS_URL: z.string()
+	}).merge(base),
+	z.object({
+		REDIS_MODE: z.literal('sentinel'),
+		REDIS_SENTINEL_NODES: z.string().transform((str) => str.split(',').map((node) => node.trim().split(':').map((part, i) => i === 1 ? parseInt(part) : part)) as [string, number][]),
+	}).merge(base)
+])
 
 export type Environment = z.infer<typeof infos>
 

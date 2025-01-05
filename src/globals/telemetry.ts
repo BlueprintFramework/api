@@ -4,7 +4,9 @@ import { network, object, string, time } from "@rjweb/utils"
 import * as schema from "@/schema"
 import { lookup } from "@/globals/ip"
 import cache from "@/globals/cache"
+import env from "@/globals/env"
 import { z } from "zod"
+import { Content, ValueCollection } from "rjweb-server"
 
 export const telemetrySchema = z.object({
 	id: z.string().uuid(),
@@ -63,7 +65,22 @@ const processing: Telemetry[] = []
 /**
  * Log a new Telemetry
  * @since 1.0.0
-*/ export function log(ip: network.IPAddress, telemetry: z.infer<typeof telemetrySchema>): Telemetry {
+*/ export async function log(ip: network.IPAddress, telemetry: z.infer<typeof telemetrySchema>, headers: ValueCollection<string, string, Content>): Promise<Telemetry | null> {
+	let ratelimitKey = 'ratelimit::'
+	if (ip['type'] === 4) ratelimitKey += ip.long()
+	else ratelimitKey += ip.rawData.slice(0, 4).join(':')
+
+	const count = await cache.incr(ratelimitKey)
+	if (count === 1) await cache.expire(ratelimitKey, Math.floor(time(1).d() / 1000))
+
+	const expires = await cache.ttl(ratelimitKey)
+
+	headers.set('X-RateLimit-Limit', env.RATELIMIT_PER_DAY)
+	headers.set('X-RateLimit-Remaining', env.RATELIMIT_PER_DAY - count)
+	headers.set('X-RateLimit-Reset', expires)
+
+	if (count > env.RATELIMIT_PER_DAY) return null
+
 	const data: Telemetry = {
 		panelId: telemetry.id,
 		telemetryVersion: telemetry.telemetry_version,
