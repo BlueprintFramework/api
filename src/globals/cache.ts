@@ -11,7 +11,8 @@ const redis = env.REDIS_MODE === 'redis'
 	? new Redis(env.REDIS_URL)
 	: new Redis({
 		sentinels: env.REDIS_SENTINEL_NODES.map(([host, port]) => ({ host, port })),
-		name: 'mymaster'
+		name: 'mymaster',
+		keyPrefix: 'blueprint-api::'
 	})
 
 redis.once('connect', () => {
