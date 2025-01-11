@@ -58,6 +58,7 @@ export const authors = pgTable('authors', {
 
 	name: varchar('name', { length: 255 }).notNull(),
 	website: varchar('website', { length: 63 }),
+	support: varchar('support', { length: 63 }),
 
 	key: char('key', { length: 32 }).notNull().default(sql`md5(random()::text)`),
 

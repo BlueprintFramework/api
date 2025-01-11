@@ -42,7 +42,8 @@ export default Object.assign(db as DbWithoutWrite, {
 			author: {
 				id: schema.authors.id,
 				name: schema.authors.name,
-				website: schema.authors.website
+				website: schema.authors.website,
+				support: schema.authors.support
 			},
 
 			name: schema.extensions.name,

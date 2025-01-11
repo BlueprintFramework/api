@@ -69,8 +69,13 @@ server.schema('Author', {
 				{ type: 'string' },
 				{ type: 'null' }
 			]
+		}, support: {
+			oneOf: [
+				{ type: 'string' },
+				{ type: 'null' }
+			]
 		}
-	}, required: ['id', 'name', 'website']
+	}, required: ['id', 'name', 'website', 'support']
 })
 
 server.schema('Extension', {
