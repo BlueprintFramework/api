@@ -5,6 +5,8 @@ export type SXCProduct = {
 	price: number
 	currency: Currency
 	url: string
+	rating_avg: number | null
+	review_count: number
 }
 
 /**

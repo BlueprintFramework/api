@@ -28,8 +28,6 @@ export default new Crontab()
 		])
 
 		for (const extension of extensions) {
-			if (!Object.keys(extension.platforms).filter((platform) => platform !== 'GITHUB').length) continue
-
 			logger()
 				.text('Updating Extension Prices of')
 				.text(extension.name, (c) => c.cyan)
@@ -44,7 +42,9 @@ export default new Crontab()
 					platforms.SOURCEXCHANGE = {
 						url: extension.platforms.SOURCEXCHANGE.url,
 						price: product.price,
-						currency: product.currency
+						currency: product.currency,
+						reviews: product.review_count,
+						rating: product.rating_avg || undefined
 					}
 				}
 			}
@@ -56,16 +56,24 @@ export default new Crontab()
 					platforms.BUILTBYBIT = {
 						url: extension.platforms.BUILTBYBIT.url,
 						price: product.price,
-						currency: product.currency
+						currency: product.currency,
+						reviews: product.review_count,
+						rating: product.review_average || undefined
 					}
 				}
 			}
 
+			if (extension.platforms.GITHUB && (!platforms.GITHUB.price || !platforms.GITHUB.currency || !platforms.GITHUB.reviews)) {
+				platforms.GITHUB = Object.assign(extension.platforms.GITHUB, {
+					price: 0,
+					currency: 'USD',
+					reviews: 0
+				})
+			}
+
 			if (JSON.stringify(platforms) !== JSON.stringify(extension.platforms)) {
 				await ctx.database.write.update(ctx.database.schema.extensions)
-					.set({
-						platforms
-					})
+					.set({ platforms })
 					.where(eq(ctx.database.schema.extensions.id, extension.id))
 			}
 

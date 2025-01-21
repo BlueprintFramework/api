@@ -4,6 +4,8 @@ import { Currency } from "@/schema"
 export type BBBProduct = {
 	price: number
 	currency: Currency
+	review_average: number | null
+	review_count: number
 }
 
 /**

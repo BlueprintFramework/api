@@ -80,7 +80,7 @@ export const extensions = pgTable('extensions', {
 	identifier: varchar('identifier', { length: 63 }).notNull(),
 	summary: varchar('summary', { length: 255 }).notNull(),
 
-	platforms: jsonb('platforms').notNull().$type<Record<Platform, { price: number, currency: Currency, url: string }>>(),
+	platforms: jsonb('platforms').notNull().$type<Record<Platform, { price: number, currency: Currency, url: string, reviews: number, rating?: number }>>(),
 	keywords: varchar('keywords', { length: 255 }).array().notNull().default([]),
 	banner: varchar('banner', { length: 255 }).notNull(),
 

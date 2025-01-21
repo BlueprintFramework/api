@@ -98,8 +98,10 @@ server.schema('Extension', {
 				properties: {
 					url: { type: 'string', format: 'uri' },
 					price: { type: 'number' },
-					currency: { type: 'string', enum: Array.from(database.schema.currency) }
-				}, required: ['url', 'price', 'currency']
+					currency: { type: 'string', enum: Array.from(database.schema.currency) },
+					reviews: { type: 'integer' },
+					rating: { type: 'number' }
+				}, required: ['url', 'price', 'currency', 'reviews']
 			}
 		},
 
