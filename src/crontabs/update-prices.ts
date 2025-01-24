@@ -33,7 +33,7 @@ export default new Crontab()
 				.text(extension.name, (c) => c.cyan)
 				.info()
 
-			const platforms = Object.assign({}, extension.platforms)
+			const platforms = JSON.parse(JSON.stringify(extension.platforms))
 
 			if (extension.platforms.SOURCEXCHANGE) {
 				const product = sxcProducts.find((product) => product.url === extension.platforms.SOURCEXCHANGE.url)
@@ -64,11 +64,12 @@ export default new Crontab()
 			}
 
 			if (extension.platforms.GITHUB && (!platforms.GITHUB.price || !platforms.GITHUB.currency || !platforms.GITHUB.reviews)) {
-				platforms.GITHUB = Object.assign(extension.platforms.GITHUB, {
+				platforms.GITHUB = {
+					url: extension.platforms.GITHUB.url,
 					price: 0,
 					currency: 'USD',
 					reviews: 0
-				})
+				}
 			}
 
 			if (JSON.stringify(platforms) !== JSON.stringify(extension.platforms)) {
