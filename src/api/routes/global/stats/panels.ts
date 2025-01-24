@@ -25,12 +25,14 @@ export = new globalAPIRouter.Path('/')
 									extensions: {
 										type: 'object',
 										properties: {
-											max: {
+											total: {
+												type: 'integer'
+											}, max: {
 												type: 'integer'
 											}, average: {
 												type: 'number'
 											}
-										}, required: ['max', 'average']
+										}, required: ['total', 'max', 'average']
 									}
 								}, required: ['total', 'docker', 'extensions']
 							}
@@ -43,6 +45,7 @@ export = new globalAPIRouter.Path('/')
 			const [ stats ] = await ctr["@"].cache.use('stats::all', () => ctr["@"].database.select({
 					totalPanels: count(),
 					dockerPanels: sum(sql`(data->'blueprint'->>'docker')::boolean::int`).mapWith(Number),
+					sumExtensions: sum(sql`jsonb_array_length(data->'blueprint'->'extensions')`).mapWith(Number),
 					maxExtensions: max(sql`jsonb_array_length(data->'blueprint'->'extensions')`).mapWith(Number),
 					avgExtensions: avg(sql`jsonb_array_length(data->'blueprint'->'extensions')`).mapWith(Number)
 				})
@@ -63,6 +66,7 @@ export = new globalAPIRouter.Path('/')
 				docker: stats.dockerPanels,
 				standalone: stats.totalPanels - stats.dockerPanels,
 				extensions: {
+					total: stats.sumExtensions,
 					max: stats.maxExtensions,
 					average: number.round(stats.avgExtensions, 2)
 				}
