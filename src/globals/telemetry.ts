@@ -25,6 +25,7 @@ export const telemetrySchema = z.object({
 		extensions: z.object({
 			identifier: z.string(),
 			version: z.string(),
+			author: z.string(),
 			target: z.string()
 		}).array()
 	}),
