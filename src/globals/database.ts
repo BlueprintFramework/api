@@ -68,7 +68,7 @@ export default Object.assign(db as DbWithoutWrite, {
 						)
 						AND created > NOW() - INTERVAL '2 days'
 					) subq
-					WHERE subq.ext->>'identifier' = ${schema.extensions.identifier}
+					WHERE subq.ext->>'identifier' = ${schema.extensions.identifier} AND subq.ext->>'author' = ${schema.authors.name}
 				)`.mapWith(Number)
 			})
 		})

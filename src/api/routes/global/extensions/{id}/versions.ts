@@ -75,7 +75,10 @@ export = new globalAPIRouter.Path('/')
 						))
 						.as('subq')
 					)
-					.where(sql`ext->>'identifier' = ${extension.identifier}`)
+					.where(and(
+						sql`ext->>'identifier' = ${extension.identifier}`,
+						sql`ext->>'author' = ${extension.author.name}`
+					))
 					.groupBy(sql`ext->>'version'`)
 					.orderBy(desc(sql`percentage`)),
 				time(5).m()
