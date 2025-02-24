@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/BlueprintFramework/framework">Blueprint</a> <b>·</b>
   <a href="https://blueprint.zip">Website</a> <b>·</b>
-  <a href="https://discord.gg/CUwHwv6xRe">Community</a>
+  <a href="https://discord.com/servers/blueprint-1063548024825057451">Community</a>
 </p>
 
 <!-- Development -->
