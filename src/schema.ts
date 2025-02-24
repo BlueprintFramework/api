@@ -86,8 +86,8 @@ export const extensions = pgTable('extensions', {
 
 	created: timestamp('created').notNull().default(sql`now()`)
 }, (extensions) => [
-	uniqueIndex('extensions_name_idx').on(extensions.name),
 	uniqueIndex('extensions_identifier_idx').on(extensions.identifier),
+	index('extensions_name_idx').on(extensions.name),
 	index('extensions_pending_idx').on(extensions.pending),
 	index('extensions_hidden_idx').on(extensions.hidden),
 	index('extensions_created_idx').on(extensions.created),

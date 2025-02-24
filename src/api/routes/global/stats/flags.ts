@@ -14,7 +14,11 @@ export = new globalAPIRouter.Path('/')
 							schema: {
 								type: 'object',
 								additionalProperties: {
-									type: 'number'
+									type: 'object',
+									properties: {
+										enabled: { type: 'number' },
+										disabled: { type: 'number' }
+									}, required: ['enabled', 'disabled']
 								}
 							}
 						}

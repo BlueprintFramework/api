@@ -36,6 +36,13 @@
       "when": 1736608978221,
       "tag": "0004_wise_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1740426333834,
+      "tag": "0005_narrow_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }
