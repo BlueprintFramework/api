@@ -14,16 +14,13 @@ git clone https://github.com/BlueprintFramework/api.git
 cd api
 
 # Install dependencies
-pnpm install
+cargo build
 
 # Fill out .env file
 cp .env.example .env
 
-# Migrate database
-pnpm kit migrate
-
 # Start development server
-pnpm dev
+cargo run
 ```
 
 <br/><br/>
