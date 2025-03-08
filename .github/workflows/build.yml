@@ -30,3 +30,4 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ghcr.io/blueprintframework/api:latest
+          cache-from: type=registry,ref=ghcr.io/blueprintframework/api:latest

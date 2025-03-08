@@ -6,14 +6,21 @@ WORKDIR /build
 RUN apk update
 RUN apk add --no-cache musl-dev pkgconfig libressl-dev git
 
+# cache dependencies
+COPY ./Cargo.toml ./Cargo.toml
+COPY ./Cargo.lock ./Cargo.lock
+
+RUN mkdir src
+RUN echo "fn main() {println!(\"hello world\")}" > src/main.rs
+RUN cargo build --release
+RUN rm -f target/release/deps/api*
+
 COPY ./.git ./.git
 COPY ./.sqlx ./.sqlx
 COPY ./src ./src
 COPY ./static ./static
 COPY ./migrations ./migrations
 COPY ./build.rs ./build.rs
-COPY ./Cargo.toml ./Cargo.toml
-COPY ./Cargo.lock ./Cargo.lock
 
 RUN cargo build --release
 RUN strip target/release/api
