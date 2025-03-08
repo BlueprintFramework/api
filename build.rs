@@ -27,7 +27,7 @@ fn main() {
     let mut git_hash = "unknown".to_string();
 
     if is_git_repo {
-        if let Ok(output) = Command::new("git").args(["rev-parse", "HEAD"]).output() {
+        if let Ok(output) = Command::new("git").args(["rev-parse", "--short", "HEAD"]).output() {
             if output.status.success() {
                 if let Ok(hash) = String::from_utf8(output.stdout) {
                     git_hash = hash.trim().to_string();
