@@ -18,6 +18,7 @@ use std::{sync::Arc, time::Instant};
 use tokio::sync::RwLock;
 use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
 use utoipa_axum::router::OpenApiRouter;
+use tower_http::cors::CorsLayer;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");
@@ -140,6 +141,7 @@ async fn main() {
             )
         })
         .layer(CatchPanicLayer::custom(handle_panic))
+        .layer(CorsLayer::very_permissive())
         .layer(TraceLayer::new_for_http().on_request(handle_request))
         .with_state(state.clone());
 
