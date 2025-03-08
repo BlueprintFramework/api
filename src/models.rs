@@ -199,7 +199,7 @@ impl Extension {
 
     pub async fn all(database: &crate::database::Database) -> Result<Vec<Self>, sqlx::Error> {
         let rows = sqlx::query(&format!(
-            "SELECT {} FROM extensions JOIN authors ON extensions.author_id = authors.id",
+            "SELECT {} FROM extensions JOIN authors ON extensions.author_id = authors.id WHERE NOT extensions.hidden AND NOT extensions.pending",
             Self::columns()
         ))
         .fetch_all(database.read())
@@ -210,7 +210,7 @@ impl Extension {
 
     pub async fn by_id(database: &crate::database::Database, id: i32) -> Option<Self> {
         let row = sqlx::query(&format!(
-            "SELECT {} FROM extensions JOIN authors ON extensions.author_id = authors.id WHERE extensions.id = $1",
+            "SELECT {} FROM extensions JOIN authors ON extensions.author_id = authors.id WHERE extensions.id = $1 AND NOT extensions.hidden AND NOT extensions.pending",
             Self::columns()
         ))
         .bind(id)
@@ -226,7 +226,7 @@ impl Extension {
         identifier: &str,
     ) -> Option<Self> {
         let row = sqlx::query(&format!(
-            "SELECT {} FROM extensions JOIN authors ON extensions.author_id = authors.id WHERE extensions.identifier = $1",
+            "SELECT {} FROM extensions JOIN authors ON extensions.author_id = authors.id WHERE extensions.identifier = $1 AND NOT extensions.hidden AND NOT extensions.pending",
             Self::columns()
         ))
         .bind(identifier)
