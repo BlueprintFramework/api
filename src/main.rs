@@ -18,6 +18,7 @@ use serde_json::json;
 use std::{sync::Arc, time::Instant};
 use tokio::sync::RwLock;
 use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer, trace::TraceLayer};
+use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
 use utoipa_axum::router::OpenApiRouter;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -174,6 +175,10 @@ async fn main() {
     openapi.servers = Some(vec![utoipa::openapi::Server::new(
         state.env.app_url.clone(),
     )]);
+    openapi.components.as_mut().unwrap().add_security_scheme(
+        "api_key",
+        SecurityScheme::ApiKey(ApiKey::Header(ApiKeyValue::new("Authorization"))),
+    );
 
     let router = router.route("/openapi.json", get(|| async move { axum::Json(openapi) }));
 

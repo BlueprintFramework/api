@@ -62,6 +62,8 @@ mod index {
 
     #[utoipa::path(get, path = "/", responses(
         (status = OK, body = inline(Response))
+    ), security(
+        ("api_key" = [])
     ))]
     pub async fn route(state: GetState, author: GetAuthor) -> axum::Json<serde_json::Value> {
         let data = sqlx::query!(
