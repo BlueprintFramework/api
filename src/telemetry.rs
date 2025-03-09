@@ -89,14 +89,7 @@ impl TelemetryLogger {
     pub async fn log(&self, ip: &str, telemetry: TelemetryData) -> Option<()> {
         let mut processing = self.processing.lock().await;
 
-        let ratelimit_key = format!(
-            "blueprint_api::ratelimit::{}",
-            if ip.contains(':') {
-                ip.split(':').next().unwrap()
-            } else {
-                &ip
-            }
-        );
+        let ratelimit_key = format!("blueprint_api::ratelimit::{}", ip);
 
         let count = self.cache.client.incr(&ratelimit_key).await.unwrap();
         if count == 1 {
