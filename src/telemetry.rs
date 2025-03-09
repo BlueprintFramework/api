@@ -90,8 +90,7 @@ impl TelemetryLogger {
         let mut processing = self.processing.lock().await;
 
         let ratelimit_key = format!(
-            "
-            ratelimit::{}",
+            "blueprint_api::ratelimit::{}",
             if ip.contains(':') {
                 ip.split(':').next().unwrap()
             } else {
