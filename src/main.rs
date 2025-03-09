@@ -13,12 +13,12 @@ use axum::{
     routing::get,
 };
 use colored::Colorize;
+use sentry_tower::SentryHttpLayer;
 use serde_json::json;
 use std::{sync::Arc, time::Instant};
 use tokio::sync::RwLock;
-use tower_http::{catch_panic::CatchPanicLayer, trace::TraceLayer};
+use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer, trace::TraceLayer};
 use utoipa_axum::router::OpenApiRouter;
-use tower_http::cors::CorsLayer;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 const GIT_COMMIT: &str = env!("CARGO_GIT_COMMIT");
@@ -143,6 +143,7 @@ async fn main() {
         .layer(CatchPanicLayer::custom(handle_panic))
         .layer(CorsLayer::very_permissive())
         .layer(TraceLayer::new_for_http().on_request(handle_request))
+        .layer(SentryHttpLayer::with_transaction())
         .with_state(state.clone());
 
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", &state.env.bind, state.env.port))
