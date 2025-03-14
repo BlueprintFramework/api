@@ -3,7 +3,6 @@ use std::process::Command;
 fn main() {
     println!("cargo:rerun-if-changed=migrations");
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=.git");
 
     let is_git_repo = Command::new("git")
         .args(["rev-parse", "--is-inside-work-tree"])

@@ -9,14 +9,16 @@ RUN apk add --no-cache musl-dev pkgconfig libressl-dev git
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./Cargo.lock ./Cargo.lock
 
+RUN mkdir src
+RUN echo "fn main() {println!(\"if you see this, the build broke\")}" > src/main.rs
+
+RUN cargo build --release
+
 COPY ./.sqlx ./.sqlx
 COPY ./src ./src
 COPY ./static ./static
 COPY ./migrations ./migrations
 COPY ./build.rs ./build.rs
-
-RUN cargo build --release
-
 COPY ./.git ./.git
 RUN cargo build --release
 
