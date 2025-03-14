@@ -37,6 +37,7 @@ pub struct AppState {
     pub github_releases: RwLock<Vec<String>>,
 
     pub database: Arc<crate::database::Database>,
+    pub cache: Arc<crate::cache::Cache>,
     pub telemetry: crate::telemetry::TelemetryLogger,
     pub env: Arc<crate::env::Env>,
 }

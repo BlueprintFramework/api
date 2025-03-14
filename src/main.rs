@@ -90,6 +90,7 @@ async fn main() {
         github_releases: RwLock::new(Vec::new()),
 
         database: database.clone(),
+        cache: cache.clone(),
         telemetry: telemetry::TelemetryLogger::new(database.clone(), cache.clone(), env.clone()),
         env,
     });

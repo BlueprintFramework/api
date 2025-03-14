@@ -4,7 +4,7 @@ use sqlx::{Row, postgres::PgRow, types::chrono::NaiveDateTime};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
-#[derive(ToSchema, Serialize)]
+#[derive(ToSchema, Serialize, Deserialize)]
 pub enum ExtensionType {
     #[schema(rename = "THEME")]
     #[serde(rename = "THEME")]
@@ -15,7 +15,7 @@ pub enum ExtensionType {
     Extension,
 }
 
-#[derive(ToSchema, Serialize, Clone)]
+#[derive(ToSchema, Serialize, Deserialize, Clone)]
 pub struct Author {
     pub id: i32,
 
@@ -78,12 +78,12 @@ pub struct ExtensionPlatform {
     pub rating: Option<f64>,
 }
 
-#[derive(ToSchema, Serialize)]
+#[derive(ToSchema, Serialize, Deserialize)]
 pub struct ExtensionStats {
     pub panels: i64,
 }
 
-#[derive(ToSchema, Serialize)]
+#[derive(ToSchema, Serialize, Deserialize)]
 pub struct Extension {
     pub id: i32,
     pub author: Author,
@@ -206,6 +206,7 @@ impl Extension {
             WHERE
                 NOT extensions.hidden
                 AND NOT extensions.pending
+            ORDER BY extensions.id ASC
             "#,
             Self::columns()
         ))

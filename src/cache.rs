@@ -1,7 +1,10 @@
 use crate::env::RedisMode;
 use colored::Colorize;
 use rustis::client::Client;
+use rustis::commands::{SetCondition, SetExpiration, StringCommands};
 use rustis::resp::cmd;
+use serde::{Serialize, de::DeserializeOwned};
+use std::future::Future;
 use std::sync::Arc;
 
 pub struct Cache {
@@ -56,5 +59,43 @@ impl Cache {
         );
 
         instance
+    }
+
+    pub async fn cached<T, F, Fut>(
+        &self,
+        key: &str,
+        ttl: u64,
+        fn_compute: F,
+    ) -> Result<T, Box<dyn std::error::Error>>
+    where
+        T: Serialize + DeserializeOwned,
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = Result<T, Box<dyn std::error::Error>>>,
+    {
+        let cached_value: Option<String> = self.client.get(key).await?;
+
+        match cached_value {
+            Some(value) => {
+                let result: T = serde_json::from_str(&value)?;
+
+                Ok(result)
+            }
+            None => {
+                let result = fn_compute().await?;
+
+                let serialized = serde_json::to_string(&result)?;
+                self.client
+                    .set_with_options(
+                        key,
+                        serialized,
+                        SetCondition::None,
+                        SetExpiration::Ex(ttl),
+                        false,
+                    )
+                    .await?;
+
+                Ok(result)
+            }
+        }
     }
 }

@@ -17,10 +17,16 @@ mod index {
         state: GetState,
         Path(extension): Path<String>,
     ) -> (StatusCode, axum::Json<serde_json::Value>) {
-        let extension = match extension.parse::<u32>() {
-            Ok(id) => Extension::by_id(&state.database, id as i32).await,
-            Err(_) => Extension::by_identifier(&state.database, &extension).await,
-        };
+        let extension = state
+            .cache
+            .cached(&format!("extensions::{}", extension), 300, || async {
+                Ok(match extension.parse::<u32>() {
+                    Ok(id) => Extension::by_id(&state.database, id as i32).await,
+                    Err(_) => Extension::by_identifier(&state.database, &extension).await,
+                })
+            })
+            .await
+            .unwrap();
 
         if extension.is_none() {
             return (
