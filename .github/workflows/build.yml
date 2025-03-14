@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Build Docker Images with Native Runners
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/arm64
           push: true
-          tags: ghcr.io/blueprintframework/api:latest
+          tags: ghcr.io/blueprintframework/api:arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -64,6 +64,29 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/blueprintframework/api:latest
+          tags: ghcr.io/blueprintframework/api:amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          
+  create-manifest:
+    needs: [build-arm, build-x86]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Create and push manifest
+        run: |
+          docker manifest create ghcr.io/blueprintframework/api:latest \
+            ghcr.io/blueprintframework/api:amd64 \
+            ghcr.io/blueprintframework/api:arm64
+
+          docker manifest push ghcr.io/blueprintframework/api:latest
