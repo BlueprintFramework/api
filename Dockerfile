@@ -9,7 +9,6 @@ RUN apk add --no-cache musl-dev pkgconfig libressl-dev git
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./Cargo.lock ./Cargo.lock
 
-COPY ./.git ./.git
 COPY ./.sqlx ./.sqlx
 COPY ./src ./src
 COPY ./static ./static
@@ -17,6 +16,10 @@ COPY ./migrations ./migrations
 COPY ./build.rs ./build.rs
 
 RUN cargo build --release
+
+COPY ./.git ./.git
+RUN cargo build --release
+
 RUN strip target/release/api
 
 # runner
