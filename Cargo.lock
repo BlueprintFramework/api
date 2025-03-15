@@ -49,7 +49,7 @@ dependencies = [
 
 [[package]]
 name = "api"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "axum",
  "chrono",
@@ -63,6 +63,7 @@ dependencies = [
  "sentry-tower",
  "serde",
  "serde_json",
+ "sha1",
  "sha2",
  "sqlx",
  "tokio",

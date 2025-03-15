@@ -9,12 +9,16 @@ mod telemetry;
 
 use axum::{
     body::Body,
-    http::{HeaderMap, Request, Response, StatusCode},
+    extract::Request,
+    http::{HeaderMap, StatusCode},
+    middleware::Next,
+    response::Response,
     routing::get,
 };
 use colored::Colorize;
 use sentry_tower::SentryHttpLayer;
 use serde_json::json;
+use sha1::Digest;
 use std::{sync::Arc, time::Instant};
 use tokio::sync::RwLock;
 use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer, trace::TraceLayer};
@@ -63,6 +67,36 @@ fn handle_request(req: &Request<Body>, _span: &tracing::Span) {
             format!("({})", ip).bright_black(),
         ),
     );
+}
+
+async fn handle_etag(req: Request, next: Next) -> Result<Response, StatusCode> {
+    let if_none_match = req.headers().get("If-None-Match").cloned();
+
+    let response = next.run(req).await;
+    let mut hash = sha1::Sha1::new();
+
+    let (mut parts, body) = response.into_parts();
+    let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
+
+    hash.update(body_bytes.as_ref());
+    let hash = format!("{:x}", hash.finalize());
+
+    parts.headers.insert("ETag", hash.parse().unwrap());
+
+    if if_none_match == Some(hash.parse().unwrap()) {
+        let mut cached_response = Response::builder()
+            .status(StatusCode::NOT_MODIFIED)
+            .body(Body::empty())
+            .unwrap();
+
+        for (key, value) in parts.headers.iter() {
+            cached_response.headers_mut().insert(key, value.clone());
+        }
+
+        return Ok(cached_response);
+    }
+
+    Ok(Response::from_parts(parts, Body::from(body_bytes)))
 }
 
 #[tokio::main]
@@ -142,6 +176,7 @@ async fn main() {
                 })),
             )
         })
+        .route_layer(axum::middleware::from_fn(handle_etag))
         .layer(CatchPanicLayer::custom(handle_panic))
         .layer(CorsLayer::very_permissive())
         .layer(TraceLayer::new_for_http().on_request(handle_request))
