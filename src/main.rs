@@ -176,11 +176,11 @@ async fn main() {
                 })),
             )
         })
-        .route_layer(axum::middleware::from_fn(handle_etag))
         .layer(CatchPanicLayer::custom(handle_panic))
         .layer(CorsLayer::very_permissive())
         .layer(TraceLayer::new_for_http().on_request(handle_request))
-        .layer(SentryHttpLayer::with_transaction())
+        .route_layer(axum::middleware::from_fn(handle_etag))
+        .route_layer(SentryHttpLayer::with_transaction())
         .with_state(state.clone());
 
     let listener = tokio::net::TcpListener::bind(format!("{}:{}", &state.env.bind, state.env.port))
