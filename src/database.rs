@@ -42,7 +42,7 @@ impl Database {
         };
 
         let version: (String,) = sqlx::query_as("SELECT split_part(version(), ' ', 4)")
-            .fetch_one(instance.read.as_ref().unwrap_or(&instance.write))
+            .fetch_one(instance.read())
             .await
             .unwrap();
 
