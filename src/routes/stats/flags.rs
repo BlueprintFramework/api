@@ -19,7 +19,7 @@ mod index {
     pub async fn route(state: GetState) -> axum::Json<serde_json::Value> {
         let flags = state
             .cache
-            .cached("stats::flags", 300, || async {
+            .cached("stats::flags", 3600, || async {
                 let mut flags: BTreeMap<String, Flag> = BTreeMap::new();
 
                 let data = sqlx::query!(

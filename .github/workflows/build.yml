@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Build and Package
 
 on:
   push:
@@ -6,15 +6,77 @@ on:
       - main
 
 jobs:
-  build-arm:
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      contents: read
-      packages: write
+  build-binaries:
+    name: Build Binaries
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools pkg-config libssl-dev
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: ${{ runner.os }}-${{ matrix.target }}
+
+      - name: Build binary
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+          strip target/${{ matrix.target }}/release/api
+          mkdir -p dist/${{ matrix.arch }}
+          cp target/${{ matrix.target }}/release/api dist/${{ matrix.arch }}/api
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-${{ matrix.arch }}
+          path: dist/${{ matrix.arch }}/api
+          retention-days: 1
+
+  create-multiarch-image:
+    name: Create multi-arch Docker image
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -22,48 +84,23 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Prepare binaries
+        run: |
+          chmod +x dist/api-amd64/api
+          chmod +x dist/api-arm64/api
+          
+          mkdir -p .docker/amd64 .docker/arm64
+          cp dist/api-amd64/api .docker/amd64/api
+          cp dist/api-arm64/api .docker/arm64/api
+          cp entrypoint.sh .docker/
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build and push Docker image
+      - name: Build and push multi-arch Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
-          platforms: linux/arm64
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/blueprintframework/api:arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  build-x86:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ghcr.io/blueprintframework/api:amd64,ghcr.io/blueprintframework/api:latest
+          tags: ghcr.io/mcjars/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

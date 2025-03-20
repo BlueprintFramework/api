@@ -29,7 +29,7 @@ mod index {
     pub async fn route(state: GetState) -> axum::Json<serde_json::Value> {
         let response = state
             .cache
-            .cached("stats::panels", 300, || async {
+            .cached("stats::panels", 3600, || async {
                 let data = sqlx::query!(
                     r#"
                     SELECT

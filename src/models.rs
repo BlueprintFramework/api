@@ -5,13 +5,10 @@ use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
 #[derive(ToSchema, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+#[schema(rename_all = "UPPERCASE")]
 pub enum ExtensionType {
-    #[schema(rename = "THEME")]
-    #[serde(rename = "THEME")]
     Theme,
-
-    #[schema(rename = "EXTENSION")]
-    #[serde(rename = "EXTENSION")]
     Extension,
 }
 
