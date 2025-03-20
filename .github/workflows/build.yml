@@ -101,6 +101,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/mcjars/api:latest
+          tags: ghcr.io/blueprintframework/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
