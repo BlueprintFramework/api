@@ -144,6 +144,10 @@ impl TelemetryLogger {
             .unwrap();
 
         for entry in data {
+            if entry.get("continentCode").is_none() || entry.get("countryCode").is_none() {
+                continue;
+            }
+
             result.insert(
                 entry["query"].as_str().unwrap().to_string(),
                 (

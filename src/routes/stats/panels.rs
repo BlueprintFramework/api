@@ -51,6 +51,8 @@ mod index {
                 .await
                 .unwrap();
 
+            println!("{:?}", data);
+
                 Ok(Response {
                     total: data.total_panels.unwrap(),
                     docker: data.docker_panels.unwrap(),
