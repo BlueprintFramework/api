@@ -74,37 +74,40 @@ pub async fn run(state: State) {
                 }
             }
 
-            if let Some(key) = extension.platforms.get_mut("BUILTBYBIT") {
-                let product: Result<Option<BbbProduct>, _> = serde_json::from_value(
-                    state
-                        .client()
-                        .get(format!(
-                            "https://api.builtbybit.com/v1/resources/{}",
-                            key.url
-                                .split('.')
-                                .last()
-                                .unwrap()
-                                .trim_end_matches(|c: char| !c.is_ascii_digit())
-                        ))
-                        .send()
-                        .await
-                        .unwrap()
-                        .json::<serde_json::Value>()
-                        .await
-                        .unwrap_or_default()
-                        .get("data")
-                        .cloned()
-                        .unwrap_or_default(),
-                );
+            if let Some(bbb_token) = &state.env.bbb_token {
+                if let Some(key) = extension.platforms.get_mut("BUILTBYBIT") {
+                    let product: Result<Option<BbbProduct>, _> = serde_json::from_value(
+                        state
+                            .client()
+                            .get(format!(
+                                "https://api.builtbybit.com/v1/resources/{}",
+                                key.url
+                                    .split('.')
+                                    .last()
+                                    .unwrap()
+                                    .trim_end_matches(|c: char| !c.is_ascii_digit())
+                            ))
+                            .header("Authorization", format!("Private {}", bbb_token))
+                            .send()
+                            .await
+                            .unwrap()
+                            .json::<serde_json::Value>()
+                            .await
+                            .unwrap_or_default()
+                            .get("data")
+                            .cloned()
+                            .unwrap_or_default(),
+                    );
 
-                if let Ok(Some(product)) = product {
-                    *key = ExtensionPlatform {
-                        url: key.url.clone(),
-                        price: product.price,
-                        currency: product.currency.clone(),
-                        reviews: Some(product.review_count),
-                        rating: product.review_average,
-                    };
+                    if let Ok(Some(product)) = product {
+                        *key = ExtensionPlatform {
+                            url: key.url.clone(),
+                            price: product.price,
+                            currency: product.currency.clone(),
+                            reviews: Some(product.review_count),
+                            rating: product.review_average,
+                        };
+                    }
                 }
             }
 
