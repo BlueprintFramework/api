@@ -41,10 +41,12 @@ pub async fn run(state: State) {
                     .unwrap()
                     .json::<serde_json::Value>()
                     .await
-                    .unwrap()["data"]
-                    .clone(),
+                    .unwrap_or_default()
+                    .get("products")
+                    .cloned()
+                    .unwrap_or_default(),
             )
-            .unwrap()
+            .unwrap_or_default()
         }
 
         for extension in extensions.iter_mut() {
@@ -58,13 +60,12 @@ pub async fn run(state: State) {
                 ),
             );
 
-            if extension.platforms.contains_key("SOURCEXCHANGE") {
-                if let Some(sxc_product) = sxc_products
-                    .iter()
-                    .find(|product| product.url == extension.platforms["SOURCEXCHANGE"].url)
+            if let Some(key) = extension.platforms.get_mut("SOURCEXCHANGE") {
+                if let Some(sxc_product) =
+                    sxc_products.iter().find(|product| product.url == key.url)
                 {
-                    *extension.platforms.get_mut("SOURCEXCHANGE").unwrap() = ExtensionPlatform {
-                        url: extension.platforms["SOURCEXCHANGE"].url.clone(),
+                    *key = ExtensionPlatform {
+                        url: key.url.clone(),
                         price: sxc_product.price,
                         currency: sxc_product.currency.clone(),
                         reviews: sxc_product.review_count,
@@ -73,14 +74,13 @@ pub async fn run(state: State) {
                 }
             }
 
-            if extension.platforms.contains_key("BUILTBYBIT") {
-                let product: Option<BbbProduct> = serde_json::from_value(
+            if let Some(key) = extension.platforms.get_mut("BUILTBYBIT") {
+                let product: Result<Option<BbbProduct>, _> = serde_json::from_value(
                     state
                         .client()
                         .get(format!(
                             "https://api.builtbybit.com/v1/resources/{}",
-                            extension.platforms["BUILTBYBIT"]
-                                .url
+                            key.url
                                 .split('.')
                                 .last()
                                 .unwrap()
@@ -91,14 +91,15 @@ pub async fn run(state: State) {
                         .unwrap()
                         .json::<serde_json::Value>()
                         .await
-                        .unwrap()["data"]
-                        .clone(),
-                )
-                .ok();
+                        .unwrap_or_default()
+                        .get("data")
+                        .cloned()
+                        .unwrap_or_default(),
+                );
 
-                if let Some(product) = product {
-                    *extension.platforms.get_mut("BUILTBYBIT").unwrap() = ExtensionPlatform {
-                        url: extension.platforms["BUILTBYBIT"].url.clone(),
+                if let Ok(Some(product)) = product {
+                    *key = ExtensionPlatform {
+                        url: key.url.clone(),
                         price: product.price,
                         currency: product.currency.clone(),
                         reviews: Some(product.review_count),
@@ -107,9 +108,9 @@ pub async fn run(state: State) {
                 }
             }
 
-            if extension.platforms.contains_key("GITHUB") {
-                *extension.platforms.get_mut("GITHUB").unwrap() = ExtensionPlatform {
-                    url: extension.platforms["GITHUB"].url.clone(),
+            if let Some(key) = extension.platforms.get_mut("GITHUB") {
+                *key = ExtensionPlatform {
+                    url: key.url.clone(),
                     price: 0.0,
                     currency: "USD".to_string(),
                     reviews: Some(0),
