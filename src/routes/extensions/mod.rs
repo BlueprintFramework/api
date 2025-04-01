@@ -13,12 +13,9 @@ mod index {
         let data = state
             .cache
             .cached("extensions::all", 300, || async {
-                Extension::all(&state.database)
-                    .await
-                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+                Extension::all(&state.database).await.unwrap()
             })
-            .await
-            .unwrap();
+            .await;
 
         axum::Json(serde_json::to_value(data).unwrap())
     }

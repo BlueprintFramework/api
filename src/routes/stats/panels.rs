@@ -51,7 +51,7 @@ mod get {
                 .await
                 .unwrap();
 
-                Ok(Response {
+                Response {
                     total: data.total_panels.unwrap(),
                     docker: data.docker_panels.unwrap(),
                     standalone: data.total_panels.unwrap() - data.docker_panels.unwrap(),
@@ -61,10 +61,9 @@ mod get {
                         max: data.max_extensions.unwrap(),
                         average: (data.avg_extensions.unwrap() * 100.0).round() / 100.0,
                     },
-                })
+                }
             })
-            .await
-            .unwrap();
+            .await;
 
         axum::Json(serde_json::to_value(response).unwrap())
     }

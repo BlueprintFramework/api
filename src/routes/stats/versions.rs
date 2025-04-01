@@ -54,10 +54,9 @@ mod get {
                     );
                 }
 
-                Ok(versions)
+                versions
             })
-            .await
-            .unwrap();
+            .await;
 
         axum::Json(serde_json::to_value(versions).unwrap())
     }

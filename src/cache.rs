@@ -62,29 +62,24 @@ impl Cache {
     }
 
     #[inline(always)]
-    pub async fn cached<T, F, Fut>(
-        &self,
-        key: &str,
-        ttl: u64,
-        fn_compute: F,
-    ) -> Result<T, Box<dyn std::error::Error>>
+    pub async fn cached<T, F, Fut>(&self, key: &str, ttl: u64, fn_compute: F) -> T
     where
         T: Serialize + DeserializeOwned,
         F: FnOnce() -> Fut,
-        Fut: Future<Output = Result<T, Box<dyn std::error::Error>>>,
+        Fut: Future<Output = T>,
     {
-        let cached_value: Option<String> = self.client.get(key).await?;
+        let cached_value: Option<String> = self.client.get(key).await.unwrap();
 
         match cached_value {
             Some(value) => {
-                let result: T = serde_json::from_str(&value)?;
+                let result: T = serde_json::from_str(&value).unwrap();
 
-                Ok(result)
+                result
             }
             None => {
-                let result = fn_compute().await?;
+                let result = fn_compute().await;
 
-                let serialized = serde_json::to_string(&result)?;
+                let serialized = serde_json::to_string(&result).unwrap();
                 self.client
                     .set_with_options(
                         key,
@@ -93,9 +88,10 @@ impl Cache {
                         SetExpiration::Ex(ttl),
                         false,
                     )
-                    .await?;
+                    .await
+                    .unwrap();
 
-                Ok(result)
+                result
             }
         }
     }

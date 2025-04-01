@@ -61,10 +61,9 @@ mod get {
                     );
                 }
 
-                Ok(flags)
+                flags
             })
-            .await
-            .unwrap();
+            .await;
 
         axum::Json(serde_json::to_value(flags).unwrap())
     }

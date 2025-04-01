@@ -20,13 +20,18 @@ mod index {
         let extension = state
             .cache
             .cached(&format!("extensions::{}", extension), 300, || async {
-                Ok(match extension.parse::<u32>() {
-                    Ok(id) => Extension::by_id(&state.database, id as i32).await,
+                match extension.parse::<i32>() {
+                    Ok(id) => {
+                        if id < 1 {
+                            None
+                        } else {
+                            Extension::by_id(&state.database, id).await
+                        }
+                    }
                     Err(_) => Extension::by_identifier(&state.database, &extension).await,
-                })
+                }
             })
-            .await
-            .unwrap();
+            .await;
 
         if extension.is_none() {
             return (
