@@ -14,15 +14,13 @@ use utoipa::ToSchema;
 use utoipa_axum::router::OpenApiRouter;
 
 #[derive(ToSchema, Serialize)]
-pub struct ApiError {
-    pub errors: Vec<String>,
+pub struct ApiError<'a> {
+    pub errors: &'a [&'a str],
 }
 
-impl ApiError {
-    pub fn new(errors: &[&str]) -> Self {
-        Self {
-            errors: errors.iter().map(|s| s.to_string()).collect(),
-        }
+impl<'a> ApiError<'a> {
+    pub fn new(errors: &'a [&'a str]) -> Self {
+        Self { errors }
     }
 
     pub fn to_value(&self) -> serde_json::Value {

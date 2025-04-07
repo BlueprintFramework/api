@@ -8,6 +8,7 @@ mod schedules;
 mod telemetry;
 
 use axum::{
+    ServiceExt,
     body::Body,
     extract::Request,
     http::{HeaderMap, StatusCode},
@@ -21,7 +22,11 @@ use serde_json::json;
 use sha1::Digest;
 use std::{sync::Arc, time::Instant};
 use tokio::sync::RwLock;
-use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer, trace::TraceLayer};
+use tower::Layer;
+use tower_http::{
+    catch_panic::CatchPanicLayer, cors::CorsLayer, normalize_path::NormalizePathLayer,
+    trace::TraceLayer,
+};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
 use utoipa_axum::router::OpenApiRouter;
 
@@ -218,7 +223,12 @@ async fn main() {
 
     let router = router.route("/openapi.json", get(|| async move { axum::Json(openapi) }));
 
-    axum::serve(listener, router.into_make_service())
-        .await
-        .unwrap();
+    axum::serve(
+        listener,
+        ServiceExt::<Request>::into_make_service(
+            NormalizePathLayer::trim_trailing_slash().layer(router),
+        ),
+    )
+    .await
+    .unwrap();
 }

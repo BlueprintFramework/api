@@ -83,7 +83,7 @@ pub async fn run(state: State) {
                                 "https://api.builtbybit.com/v1/resources/{}",
                                 key.url
                                     .split('.')
-                                    .last()
+                                    .next_back()
                                     .unwrap()
                                     .trim_end_matches(|c: char| !c.is_ascii_digit())
                             ))
