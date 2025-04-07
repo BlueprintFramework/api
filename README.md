@@ -10,8 +10,8 @@
 <br/><h2 align="center">🧩 Development</h2>
 ```bash
 # Clone the repository
-git clone https://github.com/BlueprintFramework/api.git
-cd api
+git clone https://github.com/BlueprintFramework/api.git blueprint-api
+cd blueprint-api
 
 # Install dependencies
 cargo build

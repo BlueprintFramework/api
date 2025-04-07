@@ -119,7 +119,7 @@ impl TelemetryLogger {
         Some(())
     }
 
-    async fn lookup_ips(&self, ips: &[String]) -> HashMap<String, (String, String)> {
+    async fn lookup_ips(&self, ips: &[&str]) -> HashMap<String, (String, String)> {
         let mut result = HashMap::new();
 
         let data = reqwest::Client::new()
@@ -176,7 +176,7 @@ impl TelemetryLogger {
             .lookup_ips(
                 telemetry
                     .iter()
-                    .map(|t| t.ip.clone())
+                    .map(|t| t.ip.as_str())
                     .collect::<Vec<_>>()
                     .as_slice(),
             )
