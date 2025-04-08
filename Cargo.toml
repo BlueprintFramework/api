@@ -3,6 +3,9 @@ name = "api"
 version = "2.2.2"
 edition = "2024"
 
+[profile.release]
+debug = "limited"
+
 [dependencies]
 axum = "0.8.1"
 colored = "3.0.0"

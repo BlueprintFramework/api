@@ -213,7 +213,7 @@ impl TelemetryLogger {
             .unwrap();
         }
 
-        for t in telemetry.iter() {
+        for t in telemetry {
             sqlx::query!(
                 "
                 INSERT INTO telemetry_data (panel_id, telemetry_version, ip, continent, country, data, created)

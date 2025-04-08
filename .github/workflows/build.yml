@@ -36,6 +36,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y musl-tools pkg-config libssl-dev
 
+      - name: Install Sentry CLI
+        run: |
+          curl -sL https://sentry.io/get-cli/ | bash
+
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -44,6 +48,8 @@ jobs:
       - name: Build binary
         run: |
           cargo build --release --target ${{ matrix.target }}
+          sentry-cli --url ${{ secrets.SENTRY_URL }} debug-files upload --include-sources --org ${{ secrets.SENTRY_ORG }} --project ${{ secrets.SENTRY_PROJECT }} --auth-token ${{ secrets.SENTRY_AUTH_TOKEN }} target/${{ matrix.target }}/release/api
+
           strip target/${{ matrix.target }}/release/api
           mkdir -p dist/${{ matrix.arch }}
           cp target/${{ matrix.target }}/release/api dist/${{ matrix.arch }}/api
