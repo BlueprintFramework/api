@@ -3,7 +3,10 @@ use rustis::commands::{ExpireOption, GenericCommands, StringCommands};
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use sqlx::types::Uuid;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 use tokio::sync::Mutex;
 
 nestify::nest! {
@@ -70,6 +73,8 @@ pub struct TelemetryLogger {
     database: Arc<crate::database::Database>,
     cache: Arc<crate::cache::Cache>,
     env: Arc<crate::env::Env>,
+
+    client: reqwest::Client,
 }
 
 impl TelemetryLogger {
@@ -83,9 +88,15 @@ impl TelemetryLogger {
             database,
             cache,
             env,
+
+            client: reqwest::Client::builder()
+                .user_agent("Blueprint API https://blueprint.zip")
+                .build()
+                .unwrap(),
         }
     }
 
+    #[inline]
     pub async fn log(&self, ip: &str, telemetry: TelemetryData) -> Option<()> {
         let mut processing = self.processing.lock().await;
 
@@ -119,13 +130,14 @@ impl TelemetryLogger {
         Some(())
     }
 
-    async fn lookup_ips(&self, ips: &[&str]) -> HashMap<String, (String, String)> {
+    #[inline]
+    async fn lookup_ips(&self, ips: &[&str]) -> HashMap<String, [String; 2]> {
         let mut result = HashMap::new();
 
-        let data = reqwest::Client::new()
+        let data = self
+            .client
             .post("http://ip-api.com/batch")
             .header("Content-Type", "application/json")
-            .header("User-Agent", "Blueprint API/1.0.0 https://blueprint.zip")
             .json(
                 &ips.iter()
                     .map(|ip| {
@@ -134,7 +146,7 @@ impl TelemetryLogger {
                             "fields": "continentCode,countryCode,query"
                         })
                     })
-                    .collect::<Vec<_>>(),
+                    .collect::<HashSet<_>>(),
             )
             .send()
             .await
@@ -150,10 +162,10 @@ impl TelemetryLogger {
 
             result.insert(
                 entry["query"].as_str().unwrap().to_string(),
-                (
+                [
                     entry["continentCode"].as_str().unwrap().to_string(),
                     entry["countryCode"].as_str().unwrap().to_string(),
-                ),
+                ],
             );
         }
 
@@ -183,7 +195,7 @@ impl TelemetryLogger {
             .await;
 
         for t in telemetry.iter_mut() {
-            if let Some((continent, country)) = ips.get(&t.ip) {
+            if let Some([continent, country]) = ips.get(&t.ip) {
                 t.continent = Some(continent.clone());
                 t.country = Some(country.clone());
             }

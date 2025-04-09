@@ -51,6 +51,7 @@ impl Author {
         }
     }
 
+    #[inline]
     pub async fn by_key(database: &crate::database::Database, key: &str) -> Option<Self> {
         let row = sqlx::query(&format!(
             "SELECT {} FROM authors WHERE authors.key = $1",
@@ -194,6 +195,7 @@ impl Extension {
         }
     }
 
+    #[inline]
     pub async fn all(database: &crate::database::Database) -> Result<Vec<Self>, sqlx::Error> {
         let rows = sqlx::query(&format!(
             r#"
@@ -213,6 +215,7 @@ impl Extension {
         Ok(rows.into_iter().map(Self::map).collect())
     }
 
+    #[inline]
     pub async fn by_id(database: &crate::database::Database, id: i32) -> Option<Self> {
         let row = sqlx::query(&format!(
             r#"
@@ -234,6 +237,7 @@ impl Extension {
         row.map(Self::map)
     }
 
+    #[inline]
     pub async fn by_identifier(
         database: &crate::database::Database,
         identifier: &str,
