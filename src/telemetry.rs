@@ -173,7 +173,7 @@ impl TelemetryLogger {
         Ok(result)
     }
 
-    pub async fn process(&self) {
+    pub async fn process(&self) -> Result<(), sqlx::Error> {
         let mut processing = self.processing.lock().await;
         let length = processing.len();
 
@@ -182,7 +182,7 @@ impl TelemetryLogger {
             .collect::<Vec<_>>();
 
         if telemetry.is_empty() {
-            return;
+            return Ok(());
         }
 
         let ips = self
@@ -211,7 +211,7 @@ impl TelemetryLogger {
             .collect::<std::collections::HashSet<_>>();
 
         for id in panels {
-            sqlx::query!(
+            match sqlx::query!(
                 "
                 INSERT INTO telemetry_panels (id)
                 VALUES ($1)
@@ -223,12 +223,26 @@ impl TelemetryLogger {
                 id
             )
             .execute(self.database.write())
-            .await
-            .unwrap();
+            .await {
+                Ok(_) => {},
+                Err(e) => {
+                    crate::logger::log(
+                        crate::logger::LoggerLevel::Error,
+                        format!("Failed to insert telemetry panel: {}", e),
+                    );
+
+                    self.processing
+                        .lock()
+                        .await
+                        .append(&mut telemetry);
+
+                    return Err(e);
+                }
+            }
         }
 
-        for t in telemetry {
-            sqlx::query!(
+        for t in telemetry.iter() {
+            match sqlx::query!(
                 "
                 INSERT INTO telemetry_data (panel_id, telemetry_version, ip, continent, country, data, created)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -243,8 +257,24 @@ impl TelemetryLogger {
                 t.created
             )
             .execute(self.database.write())
-            .await
-            .unwrap();
+            .await {
+                Ok(_) => {},
+                Err(e) => {
+                    crate::logger::log(
+                        crate::logger::LoggerLevel::Error,
+                        format!("Failed to insert telemetry data: {}", e),
+                    );
+
+                    self.processing
+                        .lock()
+                        .await
+                        .append(&mut telemetry);
+
+                    return Err(e);
+                }
+            }
         }
+
+        Ok(())
     }
 }

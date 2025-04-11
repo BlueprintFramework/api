@@ -142,7 +142,7 @@ async fn main() {
             loop {
                 tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
-                state.telemetry.process().await;
+                state.telemetry.process().await.unwrap_or_default();
             }
         });
     }
