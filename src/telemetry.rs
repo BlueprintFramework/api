@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use colored::Colorize;
 use rustis::commands::{ExpireOption, GenericCommands, StringCommands};
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
@@ -228,7 +229,7 @@ impl TelemetryLogger {
                 Err(e) => {
                     crate::logger::log(
                         crate::logger::LoggerLevel::Error,
-                        format!("Failed to insert telemetry panel: {}", e),
+                        format!("Failed to insert telemetry panel: {}", e).red(),
                     );
 
                     self.processing
@@ -262,7 +263,7 @@ impl TelemetryLogger {
                 Err(e) => {
                     crate::logger::log(
                         crate::logger::LoggerLevel::Error,
-                        format!("Failed to insert telemetry data: {}", e),
+                        format!("Failed to insert telemetry data: {}", e).red(),
                     );
 
                     self.processing
@@ -274,6 +275,14 @@ impl TelemetryLogger {
                 }
             }
         }
+
+        crate::logger::log(
+            crate::logger::LoggerLevel::Info,
+            format!(
+                "processed {} telemetry entries",
+                telemetry.len().to_string().cyan()
+            ),
+        );
 
         Ok(())
     }
