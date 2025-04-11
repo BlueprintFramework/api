@@ -1,5 +1,5 @@
 use crate::{
-    models::{Extension, ExtensionPlatform},
+    models::extension::{Extension, ExtensionPlatform},
     routes::State,
 };
 use colored::Colorize;
@@ -27,7 +27,7 @@ pub async fn run(state: State) {
         let start = std::time::Instant::now();
 
         let mut count = 0;
-        let mut extensions = Extension::all(&state.database).await.unwrap();
+        let mut extensions = Extension::all(&state.database).await;
         let mut sxc_products: Vec<SxcProduct> = vec![];
 
         if let Some(sxc_token) = &state.env.sxc_token {

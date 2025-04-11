@@ -4,7 +4,7 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod index {
-    use crate::{models::Extension, routes::GetState};
+    use crate::{models::extension::Extension, routes::GetState};
 
     #[utoipa::path(get, path = "/", responses(
         (status = OK, body = Vec<Extension>)
@@ -13,7 +13,7 @@ mod index {
         let data = state
             .cache
             .cached("extensions::all", 300, || async {
-                Extension::all(&state.database).await.unwrap()
+                Extension::all(&state.database).await
             })
             .await;
 

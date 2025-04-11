@@ -1,5 +1,5 @@
 use super::{ApiError, GetState, State};
-use crate::models::Author;
+use crate::models::author::Author;
 use axum::{body::Body, extract::Request, http::StatusCode, middleware::Next, response::Response};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
@@ -42,17 +42,17 @@ async fn auth(state: GetState, mut req: Request, next: Next) -> Result<Response,
 
 mod index {
     use super::GetAuthor;
-    use crate::{models::Author, routes::GetState};
+    use crate::{models::author::Author, routes::GetState};
     use serde::Serialize;
     use utoipa::ToSchema;
 
-    #[derive(Serialize, ToSchema)]
+    #[derive(ToSchema, Serialize)]
     struct Extensions {
         pending: i64,
         approved: i64,
     }
 
-    #[derive(Serialize, ToSchema)]
+    #[derive(ToSchema, Serialize)]
     struct Response {
         author: Author,
 
@@ -74,7 +74,7 @@ mod index {
             FROM extensions
             WHERE author_id = $1
             "#,
-            author.0.id
+            author.id
         )
         .fetch_one(state.database.read())
         .await

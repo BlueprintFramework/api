@@ -1,4 +1,4 @@
-use chrono::DateTime;
+use chrono::NaiveDateTime;
 use rustis::commands::{ExpireOption, GenericCommands, StringCommands};
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
@@ -65,7 +65,7 @@ pub struct Telemetry {
     continent: Option<String>,
     country: Option<String>,
     data: TelemetryData,
-    created: DateTime<chrono::Utc>,
+    created: NaiveDateTime,
 }
 
 pub struct TelemetryLogger {
@@ -122,7 +122,7 @@ impl TelemetryLogger {
             continent: None,
             country: None,
             data: telemetry,
-            created: chrono::Utc::now(),
+            created: chrono::Utc::now().naive_utc(),
         };
 
         processing.push(data);
@@ -238,7 +238,7 @@ impl TelemetryLogger {
                 t.continent,
                 t.country,
                 serde_json::to_value(&t.data).unwrap(),
-                t.created.naive_utc()
+                t.created
             )
             .execute(self.database.write())
             .await

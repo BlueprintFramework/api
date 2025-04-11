@@ -39,13 +39,14 @@ fn handle_panic(_err: Box<dyn std::any::Any + Send + 'static>) -> Response<Body>
         "a request panic has occurred".bright_red().to_string(),
     );
 
-    let body = routes::ApiError::new(&["internal server error"]);
-    let body = serde_json::to_string(&body).unwrap();
-
     Response::builder()
         .status(StatusCode::INTERNAL_SERVER_ERROR)
         .header("Content-Type", "application/json")
-        .body(Body::from(body))
+        .body(Body::from(
+            routes::ApiError::new(&["internal server error"])
+                .to_value()
+                .to_string(),
+        ))
         .unwrap()
 }
 

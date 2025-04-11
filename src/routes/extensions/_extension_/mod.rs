@@ -4,7 +4,7 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod index {
-    use crate::{models::Extension, routes::ApiError, routes::GetState};
+    use crate::{models::extension::Extension, routes::ApiError, routes::GetState};
     use axum::{extract::Path, http::StatusCode};
 
     #[utoipa::path(get, path = "/", responses(

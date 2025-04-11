@@ -2,7 +2,7 @@ use super::State;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 mod index {
-    use crate::{models::Extension, routes::ApiError, routes::GetState};
+    use crate::{models::extension::Extension, routes::ApiError, routes::GetState};
     use axum::{extract::Path, http::StatusCode};
     use indexmap::IndexMap;
     use sqlx::Row;
@@ -17,7 +17,7 @@ mod index {
         state: GetState,
         Path(extension): Path<String>,
     ) -> (StatusCode, axum::Json<serde_json::Value>) {
-        let extension = state
+        let extension = match state
             .cache
             .cached(&format!("extensions::{}", extension), 300, || async {
                 match extension.parse::<i32>() {
@@ -31,45 +31,31 @@ mod index {
                     Err(_) => Extension::by_identifier(&state.database, &extension).await,
                 }
             })
-            .await;
-
-        if extension.is_none() {
-            return (
-                StatusCode::NOT_FOUND,
-                axum::Json(serde_json::to_value(ApiError::new(&["extension not found"])).unwrap()),
-            );
-        }
+            .await
+        {
+            Some(extension) => extension,
+            None => {
+                return (
+                    StatusCode::NOT_FOUND,
+                    axum::Json(
+                        serde_json::to_value(ApiError::new(&["extension not found"])).unwrap(),
+                    ),
+                );
+            }
+        };
 
         let mut versions: IndexMap<String, f64> = IndexMap::new();
 
         let data = sqlx::query(
             r#"
             SELECT
-                ext->>'version' AS version,
-                (COUNT(*) * 100.0 / SUM(COUNT(*)) OVER ())::float8 AS percentage
-            FROM
-                (
-                    SELECT jsonb_array_elements(data->'blueprint'->'extensions') AS ext
-                    FROM telemetry_data
-                    WHERE
-                        id IN (
-                            SELECT telemetry_data.id
-                            FROM telemetry_panels_with_latest
-                            WHERE latest_telemetry_data_id = (
-                                SELECT latest_telemetry_data_id
-                                FROM telemetry_panels_with_latest
-                                ORDER BY created DESC
-                                LIMIT 1
-                            )
-                        )
-                        AND created > NOW() - INTERVAL '2 days'
-                ) AS subq
-            WHERE ext->>'identifier' = $1
-            GROUP BY ext->>'version'
-            ORDER BY percentage DESC
+                (jsonb_array_elements(mv_extension_stats.versions)->>'version') AS version,
+                (jsonb_array_elements(mv_extension_stats.versions)->>'percentage')::float8 AS percentage
+            FROM mv_extension_stats
+            WHERE mv_extension_stats.id = $1
             "#,
         )
-        .bind(&extension.unwrap().identifier)
+        .bind(extension.id)
         .fetch_all(state.database.read())
         .await
         .unwrap();
