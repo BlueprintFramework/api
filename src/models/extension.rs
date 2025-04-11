@@ -161,9 +161,9 @@ impl Extension {
             FROM extensions
             JOIN authors ON extensions.author_id = authors.id
             WHERE
-                identifier = $1
-                AND NOT pending
-                AND NOT hidden
+                extensions.identifier = $1
+                AND NOT extensions.pending
+                AND NOT extensions.hidden
             "#,
             Self::columns_sql(None, None)
         ))
@@ -182,9 +182,9 @@ impl Extension {
             FROM extensions
             JOIN authors ON extensions.author_id = authors.id
             WHERE
-                id = $1
-                AND NOT pending
-                AND NOT hidden
+                extensions.id = $1
+                AND NOT extensions.pending
+                AND NOT extensions.hidden
             "#,
             Self::columns_sql(None, None)
         ))

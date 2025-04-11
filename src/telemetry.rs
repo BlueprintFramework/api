@@ -131,7 +131,10 @@ impl TelemetryLogger {
     }
 
     #[inline]
-    async fn lookup_ips(&self, ips: &[&str]) -> HashMap<String, [String; 2]> {
+    async fn lookup_ips(
+        &self,
+        ips: &[&str],
+    ) -> Result<HashMap<String, [String; 2]>, reqwest::Error> {
         let mut result = HashMap::new();
 
         let data = self
@@ -149,11 +152,9 @@ impl TelemetryLogger {
                     .collect::<HashSet<_>>(),
             )
             .send()
-            .await
-            .unwrap()
+            .await?
             .json::<Vec<serde_json::Value>>()
-            .await
-            .unwrap();
+            .await?;
 
         for entry in data {
             if entry.get("continentCode").is_none() || entry.get("countryCode").is_none() {
@@ -169,7 +170,7 @@ impl TelemetryLogger {
             );
         }
 
-        result
+        Ok(result)
     }
 
     pub async fn process(&self) {
@@ -192,7 +193,8 @@ impl TelemetryLogger {
                     .collect::<Vec<_>>()
                     .as_slice(),
             )
-            .await;
+            .await
+            .unwrap_or_default();
 
         for t in telemetry.iter_mut() {
             if let Some([continent, country]) = ips.get(&t.ip) {
