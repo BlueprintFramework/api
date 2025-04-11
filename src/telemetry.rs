@@ -229,7 +229,7 @@ impl TelemetryLogger {
                 Err(e) => {
                     crate::logger::log(
                         crate::logger::LoggerLevel::Error,
-                        format!("Failed to insert telemetry panel: {}", e).red(),
+                        format!("{} {}", "failed to insert telemetry panel data".red(), e),
                     );
 
                     self.processing
@@ -263,7 +263,7 @@ impl TelemetryLogger {
                 Err(e) => {
                     crate::logger::log(
                         crate::logger::LoggerLevel::Error,
-                        format!("Failed to insert telemetry data: {}", e).red(),
+                        format!("{} {}", "failed to insert telemetry data".red(), e),
                     );
 
                     self.processing
