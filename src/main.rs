@@ -19,13 +19,12 @@ use axum::{
 use colored::Colorize;
 use sentry_tower::SentryHttpLayer;
 use serde_json::json;
-use sha1::Digest;
+use sha2::Digest;
 use std::{net::IpAddr, sync::Arc, time::Instant};
 use tokio::sync::RwLock;
 use tower::Layer;
 use tower_http::{
     catch_panic::CatchPanicLayer, cors::CorsLayer, normalize_path::NormalizePathLayer,
-    trace::TraceLayer,
 };
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
 use utoipa_axum::router::OpenApiRouter;
@@ -50,7 +49,7 @@ fn handle_panic(_err: Box<dyn std::any::Any + Send + 'static>) -> Response<Body>
         .unwrap()
 }
 
-fn handle_request(req: &Request<Body>, _span: &tracing::Span) {
+async fn handle_request(req: Request<Body>, next: Next) -> Result<Response, StatusCode> {
     let ip = extract_ip(req.headers())
         .map(|ip| ip.to_string())
         .unwrap_or_else(|| "unknown".to_string());
@@ -70,13 +69,15 @@ fn handle_request(req: &Request<Body>, _span: &tracing::Span) {
             format!("({})", ip).bright_black(),
         ),
     );
+
+    Ok(next.run(req).await)
 }
 
 async fn handle_etag(req: Request, next: Next) -> Result<Response, StatusCode> {
     let if_none_match = req.headers().get("If-None-Match").cloned();
 
     let response = next.run(req).await;
-    let mut hash = sha1::Sha1::new();
+    let mut hash = sha2::Sha256::new();
 
     let (mut parts, body) = response.into_parts();
     let body_bytes = axum::body::to_bytes(body, usize::MAX).await.unwrap();
@@ -202,7 +203,7 @@ async fn main() {
         })
         .layer(CatchPanicLayer::custom(handle_panic))
         .layer(CorsLayer::very_permissive())
-        .layer(TraceLayer::new_for_http().on_request(handle_request))
+        .layer(axum::middleware::from_fn(handle_request))
         .route_layer(axum::middleware::from_fn(handle_etag))
         .route_layer(SentryHttpLayer::with_transaction())
         .with_state(state.clone());
