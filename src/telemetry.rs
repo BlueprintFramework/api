@@ -6,6 +6,7 @@ use sha2::Digest;
 use sqlx::types::Uuid;
 use std::{
     collections::{HashMap, HashSet},
+    net::IpAddr,
     sync::Arc,
 };
 use tokio::sync::Mutex;
@@ -98,7 +99,7 @@ impl TelemetryLogger {
     }
 
     #[inline]
-    pub async fn log(&self, ip: &str, telemetry: TelemetryData) -> Option<()> {
+    pub async fn log(&self, ip: IpAddr, telemetry: TelemetryData) -> Option<()> {
         let mut processing = self.processing.lock().await;
 
         let ratelimit_key = format!("blueprint_api::ratelimit::{}", ip);

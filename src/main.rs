@@ -20,7 +20,7 @@ use colored::Colorize;
 use sentry_tower::SentryHttpLayer;
 use serde_json::json;
 use sha1::Digest;
-use std::{sync::Arc, time::Instant};
+use std::{net::IpAddr, sync::Arc, time::Instant};
 use tokio::sync::RwLock;
 use tower::Layer;
 use tower_http::{
@@ -51,12 +51,9 @@ fn handle_panic(_err: Box<dyn std::any::Any + Send + 'static>) -> Response<Body>
 }
 
 fn handle_request(req: &Request<Body>, _span: &tracing::Span) {
-    let ip = req
-        .headers()
-        .get("x-real-ip")
-        .or_else(|| req.headers().get("x-forwarded-for"))
-        .map(|ip| ip.to_str().unwrap_or_default())
-        .unwrap_or_default();
+    let ip = extract_ip(req.headers())
+        .map(|ip| ip.to_string())
+        .unwrap_or_else(|| "unknown".to_string());
 
     logger::log(
         logger::LoggerLevel::Info,
@@ -103,6 +100,27 @@ async fn handle_etag(req: Request, next: Next) -> Result<Response, StatusCode> {
     }
 
     Ok(Response::from_parts(parts, Body::from(body_bytes)))
+}
+
+#[inline]
+pub fn extract_ip(headers: &HeaderMap) -> Option<IpAddr> {
+    let ip = headers
+        .get("x-real-ip")
+        .or_else(|| headers.get("x-forwarded-for"))
+        .map(|ip| ip.to_str().unwrap_or_default())
+        .unwrap_or_default();
+
+    if ip.is_empty() {
+        return None;
+    }
+
+    let ip = if ip.contains(',') {
+        ip.split(',').next().unwrap_or_default().trim().to_string()
+    } else {
+        ip.to_string()
+    };
+
+    ip.parse().ok()
 }
 
 #[tokio::main]

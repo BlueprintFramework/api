@@ -89,10 +89,7 @@ impl BaseModel for Extension {
                 format!("{}banner", prefix.unwrap_or_default()),
             ),
             (
-                format!(
-                    "(SELECT stats FROM mv_extension_stats WHERE mv_extension_stats.id = {}.id)",
-                    table
-                ),
+                "mv_extension_stats.stats".to_string(),
                 format!("{}stats", prefix.unwrap_or_default()),
             ),
             (
@@ -135,6 +132,7 @@ impl Extension {
             SELECT {}
             FROM extensions
             JOIN authors ON extensions.author_id = authors.id
+            LEFT JOIN mv_extension_stats ON extensions.id = mv_extension_stats.id
             WHERE
                 NOT pending
                 AND NOT hidden
@@ -160,6 +158,7 @@ impl Extension {
             SELECT {}
             FROM extensions
             JOIN authors ON extensions.author_id = authors.id
+            LEFT JOIN mv_extension_stats ON extensions.id = mv_extension_stats.id
             WHERE
                 extensions.identifier = $1
                 AND NOT extensions.pending
@@ -181,6 +180,7 @@ impl Extension {
             SELECT {}
             FROM extensions
             JOIN authors ON extensions.author_id = authors.id
+            LEFT JOIN mv_extension_stats ON extensions.id = mv_extension_stats.id
             WHERE
                 extensions.id = $1
                 AND NOT extensions.pending

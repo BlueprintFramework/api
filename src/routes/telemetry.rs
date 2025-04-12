@@ -13,10 +13,15 @@ pub fn router(state: &State) -> OpenApiRouter<State> {
             "/",
             post(
                 |state: GetState, headers: HeaderMap, axum::Json::<TelemetryData>(data)| async move {
-                    let ip = headers.get("x-real-ip")
-                    .or_else(|| headers.get("x-forwarded-for"))
-                    .map(|ip| ip.to_str().unwrap_or_default())
-                    .unwrap_or_default();
+                    let ip = match crate::extract_ip(&headers) {
+                        Some(ip) => ip,
+                        None => {
+                            return (
+                                StatusCode::BAD_REQUEST,
+                                axum::Json(ApiError::new(&["invalid ip"]).to_value()),
+                            );
+                        }
+                    };
 
                     let telemetry = state.telemetry.log(ip, data).await;
                     if telemetry.is_none() {
