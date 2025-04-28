@@ -1,4 +1,5 @@
 use super::{BaseModel, author::Author};
+use indexmap::{IndexMap, IndexSet};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type, types::chrono::NaiveDateTime};
 use std::collections::BTreeMap;
@@ -14,6 +15,13 @@ pub enum ExtensionType {
 }
 
 #[derive(ToSchema, Serialize, Deserialize)]
+pub struct ExtensionVersion {
+    pub downloads: u32,
+
+    pub created: NaiveDateTime,
+}
+
+#[derive(ToSchema, Serialize, Deserialize)]
 pub struct ExtensionPlatform {
     pub url: String,
     pub price: f64,
@@ -21,6 +29,10 @@ pub struct ExtensionPlatform {
 
     pub reviews: Option<u32>,
     pub rating: Option<f64>,
+
+    #[schema(inline)]
+    #[serde(default)]
+    pub versions: IndexMap<String, ExtensionVersion>,
 }
 
 #[derive(ToSchema, Serialize, Deserialize)]
@@ -125,6 +137,14 @@ impl BaseModel for Extension {
 }
 
 impl Extension {
+    #[inline]
+    pub fn versions(&self) -> IndexSet<&String> {
+        self.platforms
+            .values()
+            .flat_map(|platform| platform.versions.keys())
+            .collect()
+    }
+
     #[inline]
     pub async fn all(database: &crate::database::Database) -> Vec<Self> {
         sqlx::query(&format!(

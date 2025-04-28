@@ -8,7 +8,7 @@ mod index {
     use sqlx::Row;
 
     #[utoipa::path(get, path = "/", responses(
-        (status = OK, body = HashMap<String, f64>),
+        (status = OK, body = IndexMap<String, f64>),
         (status = NOT_FOUND, body = inline(ApiError)),
     ), params(
         ("extension" = String, Path, description = "the extension identifier or id")
@@ -48,14 +48,20 @@ mod index {
 
         let data = sqlx::query(
             r#"
-            SELECT
-                (jsonb_array_elements(mv_extension_stats.versions)->>'version') AS version,
-                (jsonb_array_elements(mv_extension_stats.versions)->>'percentage')::float8 AS percentage
-            FROM mv_extension_stats
-            WHERE mv_extension_stats.id = $1
+            SELECT *
+            FROM (
+                SELECT
+                    (jsonb_array_elements(mv_extension_stats.versions)->>'version') AS version,
+                    (jsonb_array_elements(mv_extension_stats.versions)->>'percentage')::float8 AS percentage
+                FROM mv_extension_stats
+                WHERE mv_extension_stats.id = $1
+            ) x
+            WHERE x.version = ANY($2)
+            ORDER BY x.percentage DESC
             "#,
         )
         .bind(extension.id)
+        .bind(extension.versions().into_iter().collect::<Vec<_>>())
         .fetch_all(state.database.read())
         .await
         .unwrap();

@@ -1,5 +1,5 @@
 use crate::{
-    models::extension::{Extension, ExtensionPlatform},
+    models::extension::{Extension, ExtensionPlatform, ExtensionVersion},
     routes::State,
 };
 use colored::Colorize;
@@ -7,6 +7,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct SxcProduct {
+    id: u32,
     price: f64,
     currency: String,
     url: String,
@@ -15,11 +16,38 @@ struct SxcProduct {
 }
 
 #[derive(Deserialize)]
+struct SxcProductVersion {
+    name: String,
+    created_at: String,
+    downloads_count: u32,
+}
+
+#[derive(Deserialize)]
 struct BbbProduct {
     price: f64,
     currency: String,
     review_average: Option<f64>,
     review_count: u32,
+}
+
+#[derive(Deserialize)]
+struct BbbProductVersion {
+    name: String,
+    release_date: i64,
+    download_count: u32,
+}
+
+#[derive(Deserialize)]
+struct GithubRelease {
+    name: String,
+    published_at: String,
+    assets: Vec<GithubAsset>,
+}
+
+#[derive(Deserialize)]
+struct GithubAsset {
+    name: String,
+    download_count: u32,
 }
 
 pub async fn run(state: State) {
@@ -42,7 +70,7 @@ pub async fn run(state: State) {
                     .json::<serde_json::Value>()
                     .await
                     .unwrap_or_default()
-                    .get("products")
+                    .get("data")
                     .cloned()
                     .unwrap_or_default(),
             )
@@ -64,12 +92,45 @@ pub async fn run(state: State) {
                 if let Some(sxc_product) =
                     sxc_products.iter().find(|product| product.url == key.url)
                 {
+                    let versions = state
+                        .client()
+                        .get(format!(
+                            "https://www.sourcexchange.net/api/products/{}/releases",
+                            sxc_product.id
+                        ))
+                        .header(
+                            "Authorization",
+                            format!("Bearer {}", state.env.sxc_token.as_ref().unwrap()),
+                        )
+                        .send()
+                        .await
+                        .unwrap()
+                        .json::<Vec<SxcProductVersion>>()
+                        .await
+                        .unwrap_or_default();
+
                     *key = ExtensionPlatform {
                         url: key.url.clone(),
                         price: sxc_product.price,
                         currency: sxc_product.currency.clone(),
                         reviews: sxc_product.review_count,
                         rating: sxc_product.rating_avg,
+                        versions: versions
+                            .into_iter()
+                            .map(|version| {
+                                (
+                                    version.name,
+                                    ExtensionVersion {
+                                        downloads: version.downloads_count,
+                                        created: chrono::NaiveDateTime::parse_from_str(
+                                            &version.created_at,
+                                            "%Y-%m-%dT%H:%M:%S%.fZ",
+                                        )
+                                        .unwrap(),
+                                    },
+                                )
+                            })
+                            .collect(),
                     };
                 }
             }
@@ -100,24 +161,98 @@ pub async fn run(state: State) {
                     );
 
                     if let Ok(Some(product)) = product {
+                        let versions = serde_json::from_value::<Vec<BbbProductVersion>>(
+                            state
+                                .client()
+                                .get(format!(
+                                    "https://api.builtbybit.com/v1/resources/{}/versions",
+                                    key.url
+                                        .split('.')
+                                        .next_back()
+                                        .unwrap()
+                                        .trim_end_matches(|c: char| !c.is_ascii_digit())
+                                ))
+                                .header("Authorization", format!("Private {}", bbb_token))
+                                .send()
+                                .await
+                                .unwrap()
+                                .json::<serde_json::Value>()
+                                .await
+                                .unwrap_or_default()
+                                .get("data")
+                                .cloned()
+                                .unwrap_or_default(),
+                        )
+                        .unwrap_or_default();
+
                         *key = ExtensionPlatform {
                             url: key.url.clone(),
                             price: product.price,
                             currency: product.currency.clone(),
                             reviews: Some(product.review_count),
                             rating: product.review_average,
+                            versions: versions
+                                .into_iter()
+                                .map(|version| {
+                                    (
+                                        version.name,
+                                        ExtensionVersion {
+                                            downloads: version.download_count,
+                                            created: chrono::DateTime::from_timestamp(
+                                                version.release_date,
+                                                0,
+                                            )
+                                            .unwrap()
+                                            .naive_utc(),
+                                        },
+                                    )
+                                })
+                                .collect(),
                         };
                     }
                 }
             }
 
             if let Some(key) = extension.platforms.get_mut("GITHUB") {
+                let repo = key.url.split('/').collect::<Vec<_>>()[3..5].join("/");
+                let releases: Vec<GithubRelease> = state
+                    .client()
+                    .get(format!("https://api.github.com/repos/{}/releases", repo))
+                    .send()
+                    .await
+                    .unwrap()
+                    .json::<Vec<GithubRelease>>()
+                    .await
+                    .unwrap_or_default();
+
                 *key = ExtensionPlatform {
                     url: key.url.clone(),
                     price: 0.0,
                     currency: "USD".to_string(),
                     reviews: Some(0),
                     rating: None,
+                    versions: releases
+                        .into_iter()
+                        .flat_map(|release| {
+                            release
+                                .assets
+                                .into_iter()
+                                .filter(|asset| asset.name.ends_with(".blueprint"))
+                                .map(move |asset| {
+                                    (
+                                        release.name.clone(),
+                                        ExtensionVersion {
+                                            downloads: asset.download_count,
+                                            created: chrono::NaiveDateTime::parse_from_str(
+                                                &release.published_at,
+                                                "%Y-%m-%dT%H:%M:%S%.fZ",
+                                            )
+                                            .unwrap(),
+                                        },
+                                    )
+                                })
+                        })
+                        .collect(),
                 };
             }
 
