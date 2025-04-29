@@ -130,6 +130,7 @@ pub async fn run(state: State) {
                                     },
                                 )
                             })
+                            .rev()
                             .collect(),
                     };
                 }
@@ -207,6 +208,7 @@ pub async fn run(state: State) {
                                         },
                                     )
                                 })
+                                .rev()
                                 .collect(),
                         };
                     }
@@ -252,6 +254,7 @@ pub async fn run(state: State) {
                                     )
                                 })
                         })
+                        .rev()
                         .collect(),
                 };
             }
