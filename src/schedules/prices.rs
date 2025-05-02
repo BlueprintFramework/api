@@ -50,99 +50,116 @@ struct GithubAsset {
     download_count: u32,
 }
 
-pub async fn run(state: State) {
-    loop {
-        let start = std::time::Instant::now();
+async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
+    let start = std::time::Instant::now();
 
-        let mut count = 0;
-        let mut extensions = Extension::all(&state.database).await;
-        let mut sxc_products: Vec<SxcProduct> = vec![];
+    let mut count = 0;
+    let mut extensions = Extension::all(&state.database).await;
+    let mut sxc_products: Vec<SxcProduct> = vec![];
 
-        if let Some(sxc_token) = &state.env.sxc_token {
-            sxc_products = serde_json::from_value(
-                state
+    if let Some(sxc_token) = &state.env.sxc_token {
+        sxc_products = serde_json::from_value(
+            state
+                .client()
+                .get("https://www.sourcexchange.net/api/products/blueprint")
+                .header("Authorization", format!("Bearer {}", sxc_token))
+                .send()
+                .await?
+                .json::<serde_json::Value>()
+                .await
+                .unwrap_or_default()
+                .get("data")
+                .cloned()
+                .unwrap_or_default(),
+        )
+        .unwrap_or_default()
+    }
+
+    for extension in extensions.iter_mut() {
+        count += 1;
+
+        crate::logger::log(
+            crate::logger::LoggerLevel::Info,
+            format!(
+                "updating extension prices of {}",
+                extension.name.bright_cyan()
+            ),
+        );
+
+        if let Some(key) = extension.platforms.get_mut("SOURCEXCHANGE") {
+            if let Some(sxc_product) = sxc_products.iter().find(|product| product.url == key.url) {
+                let versions = state
                     .client()
-                    .get("https://www.sourcexchange.net/api/products/blueprint")
-                    .header("Authorization", format!("Bearer {}", sxc_token))
+                    .get(format!(
+                        "https://www.sourcexchange.net/api/products/{}/releases",
+                        sxc_product.id
+                    ))
+                    .header(
+                        "Authorization",
+                        format!("Bearer {}", state.env.sxc_token.as_ref().unwrap()),
+                    )
                     .send()
+                    .await?
+                    .json::<Vec<SxcProductVersion>>()
                     .await
-                    .unwrap()
-                    .json::<serde_json::Value>()
-                    .await
-                    .unwrap_or_default()
-                    .get("data")
-                    .cloned()
-                    .unwrap_or_default(),
-            )
-            .unwrap_or_default()
+                    .unwrap_or_default();
+
+                *key = ExtensionPlatform {
+                    url: key.url.clone(),
+                    price: sxc_product.price,
+                    currency: sxc_product.currency.clone(),
+                    reviews: sxc_product.review_count,
+                    rating: sxc_product.rating_avg,
+                    versions: versions
+                        .into_iter()
+                        .map(|version| {
+                            (
+                                version.name,
+                                ExtensionVersion {
+                                    downloads: version.downloads_count,
+                                    created: chrono::NaiveDateTime::parse_from_str(
+                                        &version.created_at,
+                                        "%Y-%m-%dT%H:%M:%S%.fZ",
+                                    )
+                                    .unwrap_or_default(),
+                                },
+                            )
+                        })
+                        .collect(),
+                };
+            }
         }
 
-        for extension in extensions.iter_mut() {
-            count += 1;
-
-            crate::logger::log(
-                crate::logger::LoggerLevel::Info,
-                format!(
-                    "updating extension prices of {}",
-                    extension.name.bright_cyan()
-                ),
-            );
-
-            if let Some(key) = extension.platforms.get_mut("SOURCEXCHANGE") {
-                if let Some(sxc_product) =
-                    sxc_products.iter().find(|product| product.url == key.url)
-                {
-                    let versions = state
+        if let Some(bbb_token) = &state.env.bbb_token {
+            if let Some(key) = extension.platforms.get_mut("BUILTBYBIT") {
+                let product: Result<Option<BbbProduct>, _> = serde_json::from_value(
+                    state
                         .client()
                         .get(format!(
-                            "https://www.sourcexchange.net/api/products/{}/releases",
-                            sxc_product.id
+                            "https://api.builtbybit.com/v1/resources/{}",
+                            key.url
+                                .split('.')
+                                .next_back()
+                                .unwrap()
+                                .trim_end_matches(|c: char| !c.is_ascii_digit())
                         ))
-                        .header(
-                            "Authorization",
-                            format!("Bearer {}", state.env.sxc_token.as_ref().unwrap()),
-                        )
+                        .header("Authorization", format!("Private {}", bbb_token))
                         .send()
+                        .await?
+                        .json::<serde_json::Value>()
                         .await
-                        .unwrap()
-                        .json::<Vec<SxcProductVersion>>()
-                        .await
-                        .unwrap_or_default();
+                        .unwrap_or_default()
+                        .get("data")
+                        .cloned()
+                        .unwrap_or_default(),
+                );
 
-                    *key = ExtensionPlatform {
-                        url: key.url.clone(),
-                        price: sxc_product.price,
-                        currency: sxc_product.currency.clone(),
-                        reviews: sxc_product.review_count,
-                        rating: sxc_product.rating_avg,
-                        versions: versions
-                            .into_iter()
-                            .map(|version| {
-                                (
-                                    version.name,
-                                    ExtensionVersion {
-                                        downloads: version.downloads_count,
-                                        created: chrono::NaiveDateTime::parse_from_str(
-                                            &version.created_at,
-                                            "%Y-%m-%dT%H:%M:%S%.fZ",
-                                        )
-                                        .unwrap(),
-                                    },
-                                )
-                            })
-                            .rev()
-                            .collect(),
-                    };
-                }
-            }
-
-            if let Some(bbb_token) = &state.env.bbb_token {
-                if let Some(key) = extension.platforms.get_mut("BUILTBYBIT") {
-                    let product: Result<Option<BbbProduct>, _> = serde_json::from_value(
+                if let Ok(Some(product)) = product {
+                    let versions = serde_json::from_value::<Vec<BbbProductVersion>>(
                         state
                             .client()
                             .get(format!(
-                                "https://api.builtbybit.com/v1/resources/{}",
+                                "https://api.builtbybit.com/v1/resources/{}/versions",
                                 key.url
                                     .split('.')
                                     .next_back()
@@ -151,131 +168,118 @@ pub async fn run(state: State) {
                             ))
                             .header("Authorization", format!("Private {}", bbb_token))
                             .send()
-                            .await
-                            .unwrap()
+                            .await?
                             .json::<serde_json::Value>()
                             .await
                             .unwrap_or_default()
                             .get("data")
                             .cloned()
                             .unwrap_or_default(),
-                    );
-
-                    if let Ok(Some(product)) = product {
-                        let versions = serde_json::from_value::<Vec<BbbProductVersion>>(
-                            state
-                                .client()
-                                .get(format!(
-                                    "https://api.builtbybit.com/v1/resources/{}/versions",
-                                    key.url
-                                        .split('.')
-                                        .next_back()
-                                        .unwrap()
-                                        .trim_end_matches(|c: char| !c.is_ascii_digit())
-                                ))
-                                .header("Authorization", format!("Private {}", bbb_token))
-                                .send()
-                                .await
-                                .unwrap()
-                                .json::<serde_json::Value>()
-                                .await
-                                .unwrap_or_default()
-                                .get("data")
-                                .cloned()
-                                .unwrap_or_default(),
-                        )
-                        .unwrap_or_default();
-
-                        *key = ExtensionPlatform {
-                            url: key.url.clone(),
-                            price: product.price,
-                            currency: product.currency.clone(),
-                            reviews: Some(product.review_count),
-                            rating: product.review_average,
-                            versions: versions
-                                .into_iter()
-                                .map(|version| {
-                                    (
-                                        version.name,
-                                        ExtensionVersion {
-                                            downloads: version.download_count,
-                                            created: chrono::DateTime::from_timestamp(
-                                                version.release_date,
-                                                0,
-                                            )
-                                            .unwrap()
-                                            .naive_utc(),
-                                        },
-                                    )
-                                })
-                                .rev()
-                                .collect(),
-                        };
-                    }
-                }
-            }
-
-            if let Some(key) = extension.platforms.get_mut("GITHUB") {
-                let repo = key.url.split('/').collect::<Vec<_>>()[3..5].join("/");
-                let releases: Vec<GithubRelease> = state
-                    .client()
-                    .get(format!("https://api.github.com/repos/{}/releases", repo))
-                    .send()
-                    .await
-                    .unwrap()
-                    .json::<Vec<GithubRelease>>()
-                    .await
+                    )
                     .unwrap_or_default();
 
-                *key = ExtensionPlatform {
-                    url: key.url.clone(),
-                    price: 0.0,
-                    currency: "USD".to_string(),
-                    reviews: Some(0),
-                    rating: None,
-                    versions: releases
-                        .into_iter()
-                        .flat_map(|release| {
-                            release
-                                .assets
-                                .into_iter()
-                                .filter(|asset| asset.name.ends_with(".blueprint"))
-                                .map(move |asset| {
-                                    (
-                                        release.name.clone(),
-                                        ExtensionVersion {
-                                            downloads: asset.download_count,
-                                            created: chrono::NaiveDateTime::parse_from_str(
-                                                &release.published_at,
-                                                "%Y-%m-%dT%H:%M:%S%.fZ",
-                                            )
-                                            .unwrap(),
-                                        },
-                                    )
-                                })
-                        })
-                        .rev()
-                        .collect(),
-                };
+                    *key = ExtensionPlatform {
+                        url: key.url.clone(),
+                        price: product.price,
+                        currency: product.currency.clone(),
+                        reviews: Some(product.review_count),
+                        rating: product.review_average,
+                        versions: versions
+                            .into_iter()
+                            .map(|version| {
+                                (
+                                    version.name,
+                                    ExtensionVersion {
+                                        downloads: version.download_count,
+                                        created: chrono::DateTime::from_timestamp(
+                                            version.release_date,
+                                            0,
+                                        )
+                                        .unwrap_or_default()
+                                        .naive_utc(),
+                                    },
+                                )
+                            })
+                            .collect(),
+                    };
+                }
             }
-
-            sqlx::query!(
-                "UPDATE extensions SET platforms = $1 WHERE id = $2",
-                serde_json::to_value(&extension.platforms).unwrap(),
-                extension.id
-            )
-            .execute(state.database.write())
-            .await
-            .unwrap();
         }
 
-        crate::logger::log(
-            crate::logger::LoggerLevel::Info,
-            format!(
-                "product prices refreshed {}",
-                format!("({} prices, {}ms)", count, start.elapsed().as_millis()).bright_black()
-            ),
-        );
+        if let Some(key) = extension.platforms.get_mut("GITHUB") {
+            let repo = key.url.split('/').collect::<Vec<_>>()[3..5].join("/");
+            let releases: Vec<GithubRelease> = state
+                .client()
+                .get(format!("https://api.github.com/repos/{}/releases", repo))
+                .send()
+                .await?
+                .json::<Vec<GithubRelease>>()
+                .await
+                .unwrap_or_default();
+
+            *key = ExtensionPlatform {
+                url: key.url.clone(),
+                price: 0.0,
+                currency: "USD".to_string(),
+                reviews: Some(0),
+                rating: None,
+                versions: releases
+                    .into_iter()
+                    .flat_map(|release| {
+                        release
+                            .assets
+                            .into_iter()
+                            .filter(|asset| asset.name.ends_with(".blueprint"))
+                            .map(move |asset| {
+                                (
+                                    release.name.clone(),
+                                    ExtensionVersion {
+                                        downloads: asset.download_count,
+                                        created: chrono::NaiveDateTime::parse_from_str(
+                                            &release.published_at,
+                                            "%Y-%m-%dT%H:%M:%S%.fZ",
+                                        )
+                                        .unwrap_or_default(),
+                                    },
+                                )
+                            })
+                    })
+                    .collect(),
+            };
+        }
+
+        sqlx::query!(
+            "UPDATE extensions SET platforms = $1 WHERE id = $2",
+            serde_json::to_value(&extension.platforms)?,
+            extension.id
+        )
+        .execute(state.database.write())
+        .await?;
+    }
+
+    crate::logger::log(
+        crate::logger::LoggerLevel::Info,
+        format!(
+            "product prices refreshed {}",
+            format!("({} prices, {}ms)", count, start.elapsed().as_millis()).bright_black()
+        ),
+    );
+
+    Ok(())
+}
+
+pub async fn run(state: State) {
+    loop {
+        if let Err(e) = run_inner(state.clone()).await {
+            crate::logger::log(
+                crate::logger::LoggerLevel::Error,
+                format!(
+                    "{} {}",
+                    "failed to update extension prices".red(),
+                    e.to_string().red()
+                ),
+            );
+        }
 
         tokio::time::sleep(tokio::time::Duration::from_secs(60 * 60 * 2)).await;
     }

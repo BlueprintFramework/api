@@ -136,7 +136,7 @@ impl TelemetryLogger {
     async fn lookup_ips(
         &self,
         ips: &[&str],
-    ) -> Result<HashMap<String, [String; 2]>, reqwest::Error> {
+    ) -> Result<HashMap<String, [String; 2]>, Box<dyn std::error::Error>> {
         let mut result = HashMap::new();
 
         let data = self
@@ -155,27 +155,25 @@ impl TelemetryLogger {
             )
             .send()
             .await?
-            .json::<Vec<serde_json::Value>>()
+            .json::<Vec<IpApiResponse>>()
             .await?;
 
-        for entry in data {
-            if entry.get("continentCode").is_none() || entry.get("countryCode").is_none() {
-                continue;
-            }
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct IpApiResponse {
+            continent_code: String,
+            country_code: String,
+            query: String,
+        }
 
-            result.insert(
-                entry["query"].as_str().unwrap().to_string(),
-                [
-                    entry["continentCode"].as_str().unwrap().to_string(),
-                    entry["countryCode"].as_str().unwrap().to_string(),
-                ],
-            );
+        for entry in data {
+            result.insert(entry.query, [entry.continent_code, entry.country_code]);
         }
 
         Ok(result)
     }
 
-    pub async fn process(&self) -> Result<(), sqlx::Error> {
+    pub async fn process(&self) -> Result<(), Box<dyn std::error::Error>> {
         let mut processing = self.processing.lock().await;
         let length = processing.len();
 
@@ -238,7 +236,7 @@ impl TelemetryLogger {
                         .await
                         .append(&mut telemetry);
 
-                    return Err(e);
+                    return Err(Box::new(e));
                 }
             }
         }
@@ -272,7 +270,7 @@ impl TelemetryLogger {
                         .await
                         .append(&mut telemetry);
 
-                    return Err(e);
+                    return Err(Box::new(e));
                 }
             }
         }
