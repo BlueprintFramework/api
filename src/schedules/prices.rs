@@ -132,9 +132,9 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                         crate::logger::log(
                             crate::logger::LoggerLevel::Error,
                             format!(
-                                "failed to get sourcexchange versions for {}:\n{}",
+                                "failed to get sourcexchange versions for {}:\n{:#?}",
                                 extension.name.bright_cyan(),
-                                err.to_string().red()
+                                err
                             ),
                         );
                     }
@@ -305,6 +305,7 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
         )
         .execute(state.database.write())
         .await?;
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
     }
 
     crate::logger::log(
