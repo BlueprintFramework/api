@@ -86,6 +86,10 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
             ),
         );
 
+        for version in extension.versions.iter_mut() {
+            version.downloads = 0;
+        }
+
         if let Some(key) = extension.platforms.get_mut("SOURCEXCHANGE") {
             if let Some(sxc_product) = sxc_products.iter().find(|product| product.url == key.url) {
                 match state
@@ -120,6 +124,15 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                         if versions.len() > extension.versions.len() {
                             versions.sort_unstable_by(|a, b| a.created.cmp(&b.created).reverse());
                             extension.versions = versions;
+                        } else {
+                            for version in extension.versions.iter_mut() {
+                                if let Some(sxc_version) = versions
+                                    .iter()
+                                    .find(|sxc_version| sxc_version.name == version.name)
+                                {
+                                    version.downloads += sxc_version.downloads;
+                                }
+                            }
                         }
 
                         *key = ExtensionPlatform {
@@ -212,6 +225,15 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                                         a.created.cmp(&b.created).reverse()
                                     });
                                     extension.versions = versions;
+                                } else {
+                                    for version in extension.versions.iter_mut() {
+                                        if let Some(bbb_version) = versions
+                                            .iter()
+                                            .find(|bbb_version| bbb_version.name == version.name)
+                                        {
+                                            version.downloads += bbb_version.downloads;
+                                        }
+                                    }
                                 }
 
                                 *key = ExtensionPlatform {
@@ -283,6 +305,15 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                     if versions.len() > extension.versions.len() {
                         versions.sort_unstable_by(|a, b| a.created.cmp(&b.created).reverse());
                         extension.versions = versions;
+                    } else {
+                        for version in extension.versions.iter_mut() {
+                            if let Some(github_version) = versions
+                                .iter()
+                                .find(|github_version| github_version.name == version.name)
+                            {
+                                version.downloads += github_version.downloads;
+                            }
+                        }
                     }
 
                     *key = ExtensionPlatform {
