@@ -54,13 +54,9 @@ struct GithubAsset {
 fn clean_version_name(name: &str) -> String {
     let name = name.trim().to_lowercase();
 
-    if name.starts_with('v') {
-        name.trim_start_matches("v.")
-            .trim_start_matches("v")
-            .to_string()
-    } else {
-        name.to_string()
-    }
+    name.trim_start_matches("v.")
+        .trim_start_matches("v")
+        .to_string()
 }
 
 async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
@@ -136,6 +132,8 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
 
                         if versions.len() > extension.versions.len() {
                             versions.sort_unstable_by(|a, b| a.created.cmp(&b.created).reverse());
+                            versions.dedup_by(|a, b| a.name == b.name);
+
                             extension.versions = versions;
                         } else {
                             for version in extension.versions.iter_mut() {
@@ -237,6 +235,8 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                                     versions.sort_unstable_by(|a, b| {
                                         a.created.cmp(&b.created).reverse()
                                     });
+                                    versions.dedup_by(|a, b| a.name == b.name);
+
                                     extension.versions = versions;
                                 } else {
                                     for version in extension.versions.iter_mut() {
@@ -317,6 +317,8 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
 
                     if versions.len() > extension.versions.len() {
                         versions.sort_unstable_by(|a, b| a.created.cmp(&b.created).reverse());
+                        versions.dedup_by(|a, b| a.name == b.name);
+
                         extension.versions = versions;
                     } else {
                         for version in extension.versions.iter_mut() {

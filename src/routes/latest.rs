@@ -7,7 +7,7 @@ mod get {
     use serde::Serialize;
     use utoipa::ToSchema;
 
-    #[derive(Serialize, ToSchema)]
+    #[derive(ToSchema, Serialize)]
     struct Response<'a> {
         name: &'a str,
         history: &'a [String],
