@@ -1,5 +1,4 @@
 use super::{BaseModel, author::Author};
-use indexmap::{IndexMap, IndexSet};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, postgres::PgRow, prelude::Type, types::chrono::NaiveDateTime};
 use std::collections::BTreeMap;
@@ -16,6 +15,7 @@ pub enum ExtensionType {
 
 #[derive(ToSchema, Serialize, Deserialize)]
 pub struct ExtensionVersion {
+    pub name: String,
     pub downloads: u32,
 
     pub created: NaiveDateTime,
@@ -29,10 +29,6 @@ pub struct ExtensionPlatform {
 
     pub reviews: Option<u32>,
     pub rating: Option<f64>,
-
-    #[schema(inline)]
-    #[serde(default)]
-    pub versions: IndexMap<String, ExtensionVersion>,
 }
 
 #[derive(ToSchema, Serialize, Deserialize)]
@@ -53,6 +49,9 @@ pub struct Extension {
 
     #[schema(inline)]
     pub platforms: BTreeMap<String, ExtensionPlatform>,
+    #[schema(inline)]
+    pub versions: Vec<ExtensionVersion>,
+
     pub keywords: Vec<String>,
     pub banner: String,
 
@@ -93,6 +92,10 @@ impl BaseModel for Extension {
                 format!("{}platforms", prefix.unwrap_or_default()),
             ),
             (
+                format!("{}.versions", table),
+                format!("{}versions", prefix.unwrap_or_default()),
+            ),
+            (
                 format!("{}.keywords", table),
                 format!("{}keywords", prefix.unwrap_or_default()),
             ),
@@ -128,6 +131,8 @@ impl BaseModel for Extension {
             summary: row.get(format!("{}summary", prefix).as_str()),
             platforms: serde_json::from_value(row.get(format!("{}platforms", prefix).as_str()))
                 .unwrap_or_default(),
+            versions: serde_json::from_value(row.get(format!("{}versions", prefix).as_str()))
+                .unwrap_or_default(),
             keywords: row.get(format!("{}keywords", prefix).as_str()),
             banner: row.get(format!("{}banner", prefix).as_str()),
             stats: serde_json::from_value(row.get(format!("{}stats", prefix).as_str())).unwrap(),
@@ -138,11 +143,14 @@ impl BaseModel for Extension {
 
 impl Extension {
     #[inline]
-    pub fn versions(&self) -> IndexSet<&String> {
-        self.platforms
-            .values()
-            .flat_map(|platform| platform.versions.keys())
-            .collect()
+    pub fn versions(&self) -> Vec<&String> {
+        let mut versions: Vec<&String> = Vec::new();
+
+        for version in self.versions.iter() {
+            versions.push(&version.name);
+        }
+
+        versions
     }
 
     #[inline]

@@ -104,28 +104,30 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                     .await
                 {
                     Ok(versions) => {
+                        let mut versions: Vec<ExtensionVersion> = versions
+                            .into_iter()
+                            .map(|version| ExtensionVersion {
+                                name: version.name.trim_start_matches("v").to_string(),
+                                downloads: version.downloads_count,
+                                created: chrono::NaiveDateTime::parse_from_str(
+                                    &version.created_at,
+                                    "%Y-%m-%dT%H:%M:%S%.fZ",
+                                )
+                                .unwrap_or_default(),
+                            })
+                            .collect();
+
+                        if versions.len() > extension.versions.len() {
+                            versions.sort_unstable_by(|a, b| a.created.cmp(&b.created).reverse());
+                            extension.versions = versions;
+                        }
+
                         *key = ExtensionPlatform {
                             url: key.url.clone(),
                             price: sxc_product.price,
                             currency: sxc_product.currency.clone(),
                             reviews: sxc_product.review_count,
                             rating: sxc_product.rating_avg,
-                            versions: versions
-                                .into_iter()
-                                .map(|version| {
-                                    (
-                                        version.name.trim_start_matches("v").to_string(),
-                                        ExtensionVersion {
-                                            downloads: version.downloads_count,
-                                            created: chrono::NaiveDateTime::parse_from_str(
-                                                &version.created_at,
-                                                "%Y-%m-%dT%H:%M:%S%.fZ",
-                                            )
-                                            .unwrap_or_default(),
-                                        },
-                                    )
-                                })
-                                .collect(),
                         };
                     }
                     Err(err) => {
@@ -191,29 +193,33 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                             .await
                         {
                             Ok(BbbProductVersionResponse { versions }) => {
+                                let mut versions: Vec<ExtensionVersion> = versions
+                                    .into_iter()
+                                    .map(|version| ExtensionVersion {
+                                        name: version.name.trim_start_matches("v").to_string(),
+                                        downloads: version.download_count,
+                                        created: chrono::DateTime::from_timestamp(
+                                            version.release_date,
+                                            0,
+                                        )
+                                        .unwrap_or_default()
+                                        .naive_utc(),
+                                    })
+                                    .collect();
+
+                                if versions.len() > extension.versions.len() {
+                                    versions.sort_unstable_by(|a, b| {
+                                        a.created.cmp(&b.created).reverse()
+                                    });
+                                    extension.versions = versions;
+                                }
+
                                 *key = ExtensionPlatform {
                                     url: key.url.clone(),
                                     price: product.price,
                                     currency: product.currency.clone(),
                                     reviews: Some(product.review_count),
                                     rating: product.review_average,
-                                    versions: versions
-                                        .into_iter()
-                                        .map(|version| {
-                                            (
-                                                version.name.trim_start_matches("v").to_string(),
-                                                ExtensionVersion {
-                                                    downloads: version.download_count,
-                                                    created: chrono::DateTime::from_timestamp(
-                                                        version.release_date,
-                                                        0,
-                                                    )
-                                                    .unwrap_or_default()
-                                                    .naive_utc(),
-                                                },
-                                            )
-                                        })
-                                        .collect(),
                                 };
                             }
                             Err(err) => {
@@ -255,34 +261,36 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                 .await
             {
                 Ok(releases) => {
+                    let mut versions: Vec<ExtensionVersion> = releases
+                        .into_iter()
+                        .flat_map(|release| {
+                            release
+                                .assets
+                                .into_iter()
+                                .filter(|asset| asset.name.ends_with(".blueprint"))
+                                .map(move |asset| ExtensionVersion {
+                                    name: release.name.trim_start_matches("v").to_string(),
+                                    downloads: asset.download_count,
+                                    created: chrono::NaiveDateTime::parse_from_str(
+                                        &release.published_at,
+                                        "%Y-%m-%dT%H:%M:%S%.fZ",
+                                    )
+                                    .unwrap_or_default(),
+                                })
+                        })
+                        .collect();
+
+                    if versions.len() > extension.versions.len() {
+                        versions.sort_unstable_by(|a, b| a.created.cmp(&b.created).reverse());
+                        extension.versions = versions;
+                    }
+
                     *key = ExtensionPlatform {
                         url: key.url.clone(),
                         price: 0.0,
                         currency: "USD".to_string(),
                         reviews: Some(0),
                         rating: None,
-                        versions: releases
-                            .into_iter()
-                            .flat_map(|release| {
-                                release
-                                    .assets
-                                    .into_iter()
-                                    .filter(|asset| asset.name.ends_with(".blueprint"))
-                                    .map(move |asset| {
-                                        (
-                                            release.name.trim_start_matches("v").to_string(),
-                                            ExtensionVersion {
-                                                downloads: asset.download_count,
-                                                created: chrono::NaiveDateTime::parse_from_str(
-                                                    &release.published_at,
-                                                    "%Y-%m-%dT%H:%M:%S%.fZ",
-                                                )
-                                                .unwrap_or_default(),
-                                            },
-                                        )
-                                    })
-                            })
-                            .collect(),
                     };
                 }
                 Err(err) => {
@@ -299,8 +307,9 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         sqlx::query!(
-            "UPDATE extensions SET platforms = $1 WHERE id = $2",
+            "UPDATE extensions SET platforms = $1, versions = $2 WHERE id = $3",
             serde_json::to_value(&extension.platforms)?,
+            serde_json::to_value(&extension.versions)?,
             extension.id
         )
         .execute(state.database.write())

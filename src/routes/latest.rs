@@ -7,19 +7,21 @@ mod get {
     use utoipa::ToSchema;
 
     #[derive(Serialize, ToSchema)]
-    struct Response {
-        name: String,
-        history: Vec<String>,
+    struct Response<'a> {
+        name: &'a str,
+        history: &'a [String],
     }
 
     #[utoipa::path(get, path = "/", responses(
         (status = OK, body = inline(Response))
     ))]
     pub async fn route(state: GetState) -> axum::Json<serde_json::Value> {
+        let releases = state.github_releases.read().await;
+
         axum::Json(
             serde_json::to_value(Response {
-                name: state.github_releases.read().await.first().unwrap().clone(),
-                history: state.github_releases.read().await[1..].to_vec(),
+                name: releases.first().unwrap(),
+                history: &releases[1..],
             })
             .unwrap(),
         )
