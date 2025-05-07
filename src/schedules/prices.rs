@@ -50,6 +50,19 @@ struct GithubAsset {
     download_count: u32,
 }
 
+#[inline]
+fn clean_version_name(name: &str) -> String {
+    let name = name.trim().to_lowercase();
+
+    if name.starts_with('v') {
+        name.trim_start_matches("v.")
+            .trim_start_matches("v")
+            .to_string()
+    } else {
+        name.to_string()
+    }
+}
+
 async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
     let start = std::time::Instant::now();
 
@@ -111,7 +124,7 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                         let mut versions: Vec<ExtensionVersion> = versions
                             .into_iter()
                             .map(|version| ExtensionVersion {
-                                name: version.name.trim_start_matches("v").to_string(),
+                                name: clean_version_name(&version.name),
                                 downloads: version.downloads_count,
                                 created: chrono::NaiveDateTime::parse_from_str(
                                     &version.created_at,
@@ -209,7 +222,7 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                                 let mut versions: Vec<ExtensionVersion> = versions
                                     .into_iter()
                                     .map(|version| ExtensionVersion {
-                                        name: version.name.trim_start_matches("v").to_string(),
+                                        name: clean_version_name(&version.name),
                                         downloads: version.download_count,
                                         created: chrono::DateTime::from_timestamp(
                                             version.release_date,
@@ -291,7 +304,7 @@ async fn run_inner(state: State) -> Result<(), Box<dyn std::error::Error>> {
                                 .into_iter()
                                 .filter(|asset| asset.name.ends_with(".blueprint"))
                                 .map(move |asset| ExtensionVersion {
-                                    name: release.name.trim_start_matches("v").to_string(),
+                                    name: clean_version_name(&release.name),
                                     downloads: asset.download_count,
                                     created: chrono::NaiveDateTime::parse_from_str(
                                         &release.published_at,
